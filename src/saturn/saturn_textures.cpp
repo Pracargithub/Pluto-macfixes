@@ -181,7 +181,13 @@ const void* saturn_bind_texture(const void* input, Object* currentObj) {
     return input;
 }
 
+/**
+ * The eye texture on succesive frames of Mario's blink animation.
+ * He intentionally blinks twice each time.
+ */
 static s8 gMarioBlinkAnimation[7] = { 1, 2, 1, 0, 1, 2, 1 };
+
+/* Custom blink cycle, handling eye switch options including custom eyes */
 void saturn_custom_blink(s16* switch_eyes, s16 blink_frame, s8 eye_state) {
     if (switch_state_eyes <= 3 || switch_state_eyes == 8) custom_eyes = false;
     switch (switch_state_eyes) {

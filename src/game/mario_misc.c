@@ -61,12 +61,6 @@ struct PlayerColor {
 };
 
 /**
- * The eye texture on succesive frames of Mario's blink animation.
- * He intentionally blinks twice each time.
- */
-static s8 gMarioBlinkAnimation[7] = { 1, 2, 1, 0, 1, 2, 1 };
-
-/**
  * The scale values per frame for Mario's foot/hand for his attack animation
  * There are 3 scale animations in groups of 6 frames.
  * The first animation starts at frame index 3 and goes down, the others start at frame index 5.

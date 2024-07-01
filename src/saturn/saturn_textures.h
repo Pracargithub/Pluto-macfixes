@@ -82,6 +82,7 @@ extern "C" {
 #endif    
     #include "include/types.h"
     const void* saturn_bind_texture(const void*, struct Object*);
+    void saturn_custom_blink(s16* switch_eyes, s16 blink_frame, s8 eye_state);
 #ifdef __cplusplus
 }
 #endif

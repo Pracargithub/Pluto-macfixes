@@ -27,6 +27,7 @@
 #include "pc/network/network.h"
 #include "pc/lua/smlua_hooks.h"
 #include "saturn/saturn.h"
+#include "saturn/saturn_textures.h"
 
 #define TOAD_STAR_1_REQUIREMENT gBehaviorValues.ToadStar1Requirement
 #define TOAD_STAR_2_REQUIREMENT gBehaviorValues.ToadStar2Requirement
@@ -401,21 +402,8 @@ Gfx* geo_switch_mario_eyes(s32 callContext, struct GraphNode* node, UNUSED Mat4*
     s16 blinkFrame;
 
     if (callContext == GEO_CONTEXT_RENDER) {
-        if (bodyState->eyeState == 0) {
-            blinkFrame = ((switchCase->numCases * 32 + gAreaUpdateCounter) >> 1) & 0x1F;
-            if (blinkFrame < 7) {
-                switchCase->selectedCase = gMarioBlinkAnimation[blinkFrame];
-            }
-            else {
-                switchCase->selectedCase = 0;
-            }
-        }
-        else {
-            switchCase->selectedCase = bodyState->eyeState - 1;
-        }
-
-        if (switch_state_eyes != 0) switchCase->selectedCase = switch_state_eyes - 1;
-        if (custom_eyes) switchCase->selectedCase = 3;
+        blinkFrame = ((switchCase->numCases * 32 + gAreaUpdateCounter) >> 1) & 0x1F;
+        saturn_custom_blink(&switchCase->selectedCase, blinkFrame, bodyState->eyeState);
     }
     return NULL;
 }

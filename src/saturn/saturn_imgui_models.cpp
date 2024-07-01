@@ -77,7 +77,11 @@ void OpenModelExpressionSelector(PackData* pack) {
     if (!pack->mEnabled || !IsSaturnModel(pack->mIndex) || current_expressions.size() <= 0) return;
     if (model_color_code_list.size() > 0) ImGui::Separator();
 
-    if (current_expressions[0].Name == "eyes") ImGui::Checkbox("Custom Eyes", &custom_eyes);
+    if (current_expressions[0].Name == "eyes") {
+        if (ImGui::Checkbox("Custom Eyes", &custom_eyes))
+            if (!custom_eyes) switch_state_eyes = 0;
+            else if (switch_state_eyes <= 3 || switch_state_eyes == 8) switch_state_eyes = 4;
+    }
     OpenEyeSelector();
 
     if (current_expressions.size() > 1) {
@@ -233,9 +237,9 @@ void OpenSwitchOptions() {
     }
     ImGui::Separator();
 
-    ImGui::BeginDisabled(custom_eyes);
+    //ImGui::BeginDisabled(custom_eyes);
     ImGui::Combo("Eyes###eye_state", &switch_state_eyes, eye_switches, IM_ARRAYSIZE(eye_switches));
-    ImGui::EndDisabled();
+    //ImGui::EndDisabled();
     ImGui::Combo("Right Hand###right_hand_state", &switch_state_hand_right, right_hand_switches, IM_ARRAYSIZE(right_hand_switches));
     ImGui::Combo("Left Hand###left_hand_state", &switch_state_hand_left, left_hand_switches, IM_ARRAYSIZE(left_hand_switches));
     ImGui::Combo("Cap###cap_state", &switch_state_cap, cap_switches, IM_ARRAYSIZE(cap_switches));

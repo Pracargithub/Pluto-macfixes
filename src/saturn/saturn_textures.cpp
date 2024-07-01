@@ -180,3 +180,30 @@ const void* saturn_bind_texture(const void* input, Object* currentObj) {
 
     return input;
 }
+
+static s8 gMarioBlinkAnimation[7] = { 1, 2, 1, 0, 1, 2, 1 };
+void saturn_custom_blink(s16* switch_eyes, s16 blink_frame, s8 eye_state) {
+    if (switch_state_eyes <= 3 || switch_state_eyes == 8) custom_eyes = false;
+    switch (switch_state_eyes) {
+        // Blink Cycle
+        case 0:
+            if (eye_state == 0) {
+                if (blink_frame < 7) *switch_eyes = gMarioBlinkAnimation[blink_frame];
+                else *switch_eyes = 0;
+            } else *switch_eyes = eye_state - 1;
+            break;
+        // Open, Half, Closed
+        case 1:
+        case 2:
+        case 3:
+        // Dead
+        case 8:
+            *switch_eyes = switch_state_eyes - 1;
+            break;
+        // Custom Eyes
+        default:
+            custom_eyes = true;
+            *switch_eyes = switch_state_eyes - 1;
+            break;
+    }
+}

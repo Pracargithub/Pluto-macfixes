@@ -405,7 +405,7 @@ void OpenCCEditor() {
         }
         if (ImGui::BeginTabItem("GameShark")) {
             // GameShark
-            if (ImGui::InputTextMultiline("###gameshark_box", uiGameShark, IM_ARRAYSIZE(uiGameShark), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 24),
+            if (ImGui::InputTextMultiline("###gameshark_box", uiGameShark, IM_ARRAYSIZE(uiGameShark), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 24.5f),
                 ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CtrlEnterForNewLine)) {
                     PasteGameShark(std::string(uiGameShark), true);
                     current_color_code.ParseGameShark();

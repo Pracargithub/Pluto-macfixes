@@ -28,6 +28,11 @@
 
 #include "data/dynos.cpp.h"
 
+extern "C" {
+#include "src/game/object_helpers.h"
+#include "include/behavior_data.h"
+}
+
 bool ignore_expression_visibility;
 
 const char* eye_switches[] = {"Default (Blink)", "Open", "Half", "Closed", "Left", "Right", "Up", "Down", "Dead"};
@@ -311,6 +316,7 @@ void OpenModelSelector() {
                     current_expressions.clear();
                     UpdateEditorLabels();
                     warning_dismissed = false;
+                    spawn_object(gMarioStates[0].marioObj, 0x95, bhvGoldenCoinSparkles);
                 }
                 LoadModelData(i, pack->mEnabled);
                 if (active_saturn_model_index == -1) custom_eyes = false;

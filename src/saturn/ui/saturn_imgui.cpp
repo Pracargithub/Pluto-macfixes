@@ -9,6 +9,7 @@
 #include "saturn/ui/saturn_imgui_colors.h"
 #include "saturn/ui/saturn_imgui_models.h"
 #include "saturn/ui/saturn_imgui_world.h"
+#include "saturn/ui/saturn_imgui_animations.h"
 #include "saturn/libs/imgui/imgui.h"
 #include "saturn/libs/imgui/imgui_internal.h"
 #include "saturn/libs/imgui/imgui-knobs.h"
@@ -25,6 +26,7 @@ extern "C" {
     #include "pc/network/network_player.h"
     #include "game/object_collision.h"
     #include "game/camera.h"
+    #include "game/mario.h"
     #include "engine/math_util.h"
     #include "engine/behavior_script.h"
 }
@@ -38,8 +40,6 @@ bool show_menu;
 bool show_window_machinima = true;
 bool show_window_cc_editor = true;
 bool show_window_model_settings = true;
-
-static char animSearchTerm[128];
 
 void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
     current_window = window;
@@ -56,6 +56,7 @@ void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     RefreshColorCodeList();
+    pluto_animations_list = GetPAnimList("dynos/anims");
 }
 
 void imgui_handle_events(SDL_Event* event) {
@@ -120,37 +121,7 @@ void imgui_update() {
                 // Animation Mixtape
                 if (gMarioStates[0].marioObj != NULL) {
                 if (ImGui::BeginMenu("Animation", freeze_camera && !enable_head_rotation)) {
-                    if (ImGui::BeginCombo("###animation_combo", saturn_animations[selected_anim_index], ImGuiComboFlags_None)) {
-                        ImGui::InputTextWithHint("###anim_search", "Search...", animSearchTerm, IM_ARRAYSIZE(animSearchTerm), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CharsUppercase);
-                        ImGui::Separator();
-                        for (int n = 0; n < 209; n++) {
-                            const bool is_selected = (selected_anim_index == n);
-
-                            if (std::string(saturn_animations[n]).find(animSearchTerm) == std::string::npos &&
-                                animSearchTerm != "")
-                                continue;
-
-                            if (ImGui::Selectable(saturn_animations[n], is_selected))
-                                selected_anim_index = n;
-
-                            if (is_selected) ImGui::SetItemDefaultFocus();
-                        }
-                        ImGui::EndCombo();
-                    }
-                    ImGui::Checkbox("Override Animation", &override_anim);
-                    ImGui::Separator();
-
-                    ImGui::BeginDisabled(!override_anim);
-                    ImGui::Text("Now Playing: %s", saturn_animations[gMarioStates[0].marioObj->header.gfx.animInfo.animID]);
-                    ImGui::BeginDisabled(!pause_anim);
-                    ImGui::SliderInt("###animation_frame", &paused_frame, gMarioStates[0].marioObj->header.gfx.animInfo.curAnim->loopStart, gMarioStates[0].marioObj->header.gfx.animInfo.curAnim->loopEnd-1, "frame %d", ImGuiSliderFlags_AlwaysClamp);
-                    ImGui::EndDisabled();
-                    ImGui::Checkbox("Paused", &pause_anim);
-                    ImGui::EndDisabled();
-                    ImGui::SameLine(); ImGui::Checkbox("Hang", &hang_anim);
-                    ImGui::BeginDisabled(hang_anim);
-                    ImGui::SameLine(); ImGui::Checkbox("Loop", &loop_anim);
-                    ImGui::EndDisabled();
+                    OpenAnimationsMenu();
                     ImGui::EndMenu();
                 }
                 }
@@ -212,6 +183,24 @@ void imgui_update() {
             ImGui::End();
         }
     }
+
+    /*ImGui::Begin("Test");
+    if (ImGui::Button("Load")) {
+        LoadPAnim("C:\\Users\\llenn\\Documents\\tilt-spaz.panim");
+    }
+    ImGui::Text("Name: %s", p_name.c_str());
+    ImGui::Text("Author: %s", p_author.c_str());
+    ImGui::Text("Looping: %02x", p_loop);
+    ImGui::Text("Length: %i", p_length);
+    ImGui::Text("Nodes: %i", p_nodes);
+    if (p_values.size() > 0) ImGui::Text("Values: %02x..%02x (%i)", p_values[0], p_values[p_values.size()-1], p_values.size());
+    if (p_indices.size() > 0) ImGui::Text("Indices: %02x..%02x (%i)", p_indices[0], p_indices[p_indices.size()-1], p_indices.size());
+    ImGui::Checkbox("Custom", &enable_custom_anim);
+    if (ImGui::Button("Play")) {
+        set_character_animation(&gMarioStates[0], CHAR_ANIM_A_POSE);
+        saturn_play_custom_animation();
+    }
+    ImGui::End();*/
 
     //ImGui::ShowDemoWindow();
 

@@ -7,6 +7,7 @@
 #include "pc/djui/djui.h"
 #include "pc/djui/djui_chat_box.h"
 #include "pc/djui/djui_console.h"
+#include "saturn/saturn_animations.h"
 extern "C" {
     #include "sm64.h"
     #include "game/camera.h"
@@ -41,10 +42,12 @@ int active_saturn_model_index = -1;
 
 bool override_anim;
 int selected_anim_index = MARIO_ANIM_BREAKDANCE;
+int selected_panim_index = 0;
 bool pause_anim;
 int paused_frame;
 bool hang_anim;
 bool loop_anim;
+bool enable_custom_anim;
 
 int player_speed = 127;
 int walkpoint_speed = 127;
@@ -118,7 +121,7 @@ int saturn_camera_update() {
         // Misc. Animation
         if (gMarioStates[0].marioObj != NULL) {
             if (!pause_anim) paused_frame = gMarioStates[0].marioObj->header.gfx.animInfo.animFrame;
-            if (gMarioStates[0].forwardVel != 0.f && !pause_anim) override_anim = false;
+            if (gMarioStates[0].forwardVel != 0.f && (!pause_anim || enable_custom_anim)) override_anim = false;
         }
 
         return CAM_FROZEN;
@@ -130,7 +133,8 @@ int saturn_camera_update() {
 /* Custom Mario action, active when the player is idle and in machinima mode.
 To-do: Cycle animations via the mixtape */
 void saturn_action_idle(struct MarioState *m) {
-    set_character_animation(m, (override_anim) ? selected_anim_index : CHAR_ANIM_FIRST_PERSON);
+    if (enable_custom_anim && override_anim) saturn_play_custom_animation();
+    else set_character_animation(m, (override_anim) ? selected_anim_index : CHAR_ANIM_FIRST_PERSON);
     if (m->marioObj == NULL) return;
 
     // Spin/Angle
@@ -151,5 +155,8 @@ void saturn_action_idle(struct MarioState *m) {
         if (paused_frame > targetAnim->loopEnd-1) paused_frame = targetAnim->loopEnd-1;
         if (paused_frame < targetAnim->loopStart) paused_frame = targetAnim->loopStart;
     } else
-        if (!hang_anim && is_anim_past_end(m) && !targetAnimLooping) override_anim = false;
+        if (!hang_anim && is_anim_past_end(m) && !targetAnimLooping) {
+            override_anim = false;
+            set_character_animation(m, CHAR_ANIM_IDLE_HEAD_LEFT);
+        }
 }

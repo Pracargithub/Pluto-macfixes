@@ -37,10 +37,12 @@ extern "C" {
 
     extern bool override_anim;
     extern int selected_anim_index;
+    extern int selected_panim_index;
     extern bool pause_anim;
     extern int paused_frame;
     extern bool hang_anim;
     extern bool loop_anim;
+    extern bool enable_custom_anim;
 
     extern int player_speed;
     extern int walkpoint_speed;

@@ -10,7 +10,6 @@
 
 extern "C" {
 #endif
-extern bool update_bone_anim(struct MarioState* m);
 extern void OpenAnimationsMenu();
 #ifdef __cplusplus
 }

@@ -61,9 +61,6 @@ struct NetworkPlayer {
     u8 paletteIndex;
     u8 overridePaletteIndex;
     u8 overridePaletteIndexLp;
-
-    Vec3f bone_rotations[20];
-    bool bone_editor_active;
 };
 
 extern struct NetworkPlayer gNetworkPlayers[];

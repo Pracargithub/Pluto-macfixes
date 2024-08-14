@@ -40,6 +40,7 @@ std::vector<std::string> model_color_code_list;
 
 bool auto_chroma;
 ColorTemplate chromaColor           {0,   0,   255, 127, 0,   0  };
+u16 gChromaKeyColor = 0x07C1;
 bool chroma_show_objects;
 bool chroma_show_geo;
 bool chroma_affects_light = true;

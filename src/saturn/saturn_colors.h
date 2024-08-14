@@ -177,6 +177,7 @@ extern "C" {
 #endif    
 extern bool auto_chroma;
 extern struct ColorTemplate chromaColor;
+extern u16 gChromaKeyColor;
 extern bool chroma_show_objects;
 extern bool chroma_show_geo;
 extern bool chroma_affects_light;

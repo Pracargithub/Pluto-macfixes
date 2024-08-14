@@ -27,6 +27,18 @@ void saturn_set_chroma_color(ImVec4 color) {
     chromaColor.red[1] = chromaColor.red[0];
     chromaColor.green[1] = chromaColor.green[0];
     chromaColor.blue[1] = chromaColor.blue[0];
+
+    // Some custom maps prefer this instead
+    // 16 bit RGBA color used in background nodes
+    // https://n64squid.com/homebrew/n64-sdk/textures/image-formats/
+    
+    int r5 = ((int)(uiChromaColor.x * 255) * 31 / 255);
+    int g5 = ((int)(uiChromaColor.y * 255) * 31 / 255);
+    int b5 = ((int)(uiChromaColor.z * 255) * 31 / 255);
+    int rShift = (int) r5 << 11;
+    int bShift = (int) g5 << 6;
+    int gShift = (int) b5 << 1;
+    gChromaKeyColor = (int) (bShift | gShift | rShift | 1);
 }
 
 void OpenAutoChromaMenu() {

@@ -108,6 +108,7 @@ void imgui_update() {
                 ImGui::Separator();
                 if (ImGui::MenuItem("Machinima", NULL, show_window_machinima)) show_window_machinima = !show_window_machinima;
                 if (ImGui::MenuItem("Color Code Editor", NULL, show_window_cc_editor)) show_window_cc_editor = !show_window_cc_editor;
+                if (ImGui::MenuItem("Animation", NULL, show_window_animations, freeze_camera && !enable_head_rotation)) show_window_animations = !show_window_animations;
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Avatar")) {
@@ -120,8 +121,6 @@ void imgui_update() {
                     OpenSwitchOptions();
                     ImGui::EndMenu();
                 }
-
-                if (ImGui::MenuItem("Animation", NULL, show_window_animations, freeze_camera && !enable_head_rotation)) show_window_animations = !show_window_animations;
 
                 // Model Selector
                 ImGui::Separator();

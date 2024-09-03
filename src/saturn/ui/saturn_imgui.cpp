@@ -200,24 +200,6 @@ void imgui_update() {
         }
     }
 
-    /*ImGui::Begin("Test");
-    if (ImGui::Button("Load")) {
-        LoadPAnim("C:\\Users\\llenn\\Documents\\tilt-spaz.panim");
-    }
-    ImGui::Text("Name: %s", p_name.c_str());
-    ImGui::Text("Author: %s", p_author.c_str());
-    ImGui::Text("Looping: %02x", p_loop);
-    ImGui::Text("Length: %i", p_length);
-    ImGui::Text("Nodes: %i", p_nodes);
-    if (p_values.size() > 0) ImGui::Text("Values: %02x..%02x (%i)", p_values[0], p_values[p_values.size()-1], p_values.size());
-    if (p_indices.size() > 0) ImGui::Text("Indices: %02x..%02x (%i)", p_indices[0], p_indices[p_indices.size()-1], p_indices.size());
-    ImGui::Checkbox("Custom", &enable_custom_anim);
-    if (ImGui::Button("Play")) {
-        set_character_animation(&gMarioStates[0], CHAR_ANIM_A_POSE);
-        saturn_play_pluto_animation();
-    }
-    ImGui::End();*/
-
     //ImGui::ShowDemoWindow();
 
     ImGui::Render();

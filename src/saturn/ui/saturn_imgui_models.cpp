@@ -68,7 +68,17 @@ void OpenEyeSelector() {
                 std::filesystem::path path = current_expressions[0].Textures[i].FilePath;
                 std::filesystem::path base = current_expressions[0].FolderPath;
                 if (std::filesystem::relative(path, base) == saturn_file_browser_get_selected()) {
-                    current_expressions[0].CurrentIndex = i;
+
+                    if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+                        // Custom blink cycle
+                        if (current_expressions[0].BlinkIndex[0] == -1) current_expressions[0].BlinkIndex[0] = i;
+                        else current_expressions[0].BlinkIndex[1] = i;
+                    } else {
+                        // Set expression index
+                        current_expressions[0].CurrentIndex = i;
+                        current_expressions[0].BlinkIndex[0] = -1;
+                        current_expressions[0].BlinkIndex[1] = -1;
+                    }
                     break;
                 }
             }

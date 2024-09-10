@@ -37,6 +37,7 @@
 
 #include "../platform.h"
 #include "../configfile.h"
+#include "gfx_pc.h"
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
 
@@ -705,8 +706,29 @@ static void gfx_opengl_init(void) {
 static void gfx_opengl_on_resize(void) {
 }
 
+bool framebuffer_created = false;
+GLuint framebuffer_id;
+GLuint depthbuffer_id;
+GLuint rendertexture_id;
+
 static void gfx_opengl_start_frame(void) {
     frame_count++;
+
+    if (!framebuffer_created) {
+        framebuffer_created = true;
+        glGenFramebuffers(1, &framebuffer_id);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id);
+        glGenTextures(1, &rendertexture_id);
+        glBindTexture(GL_TEXTURE_2D, rendertexture_id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gfx_current_dimensions.width, gfx_current_dimensions.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rendertexture_id, 0);
+        glGenRenderbuffers(1, &depthbuffer_id);
+        glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer_id);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, gfx_current_dimensions.width, gfx_current_dimensions.height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer_id);
+    }
 
     if (configWindow.msaa > 0) {
         glEnable(GL_MULTISAMPLE);
@@ -716,13 +738,25 @@ static void gfx_opengl_start_frame(void) {
 
     glDisable(GL_SCISSOR_TEST);
     glDepthMask(GL_TRUE); // Must be set to clear Z-buffer
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_SCISSOR_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 static void gfx_opengl_end_frame(void) {
+    if (framebuffer_created) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        imgui_set_framebuffer((void*)(intptr_t)rendertexture_id);
+    }
     imgui_update();
+    if (framebuffer_created) {
+        glDeleteFramebuffers(1, &framebuffer_id);
+        glDeleteRenderbuffers(1, &depthbuffer_id);
+        glDeleteTextures(1, &rendertexture_id);
+    }
 }
 
 static void gfx_opengl_finish_render(void) {

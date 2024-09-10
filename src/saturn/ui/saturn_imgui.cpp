@@ -210,3 +210,13 @@ void imgui_update() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glUseProgram(last_program);
 }
+
+void* framebuffer;
+
+void imgui_set_framebuffer(void* buffer) {
+    framebuffer = buffer;
+}
+
+void capture_screenshot() {
+
+}

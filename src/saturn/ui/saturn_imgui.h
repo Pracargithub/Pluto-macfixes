@@ -16,6 +16,7 @@ extern "C" {
     void imgui_init_backend(SDL_Window*, SDL_GLContext);
     void imgui_handle_events(SDL_Event*);
     void imgui_update();
+    void imgui_set_framebuffer(void*);
 
     void UpdatePaletteFromEditor(int);
 #ifdef __cplusplus

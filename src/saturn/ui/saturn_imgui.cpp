@@ -53,6 +53,8 @@ void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
     io.WantSetMousePos = false;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
+    ImGui::StyleColorsPluto();
+
     ImGui_ImplSDL2_InitForOpenGL(current_window, ctx);
     ImGui_ImplOpenGL3_Init(glsl_version);
 

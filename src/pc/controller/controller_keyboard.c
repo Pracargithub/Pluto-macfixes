@@ -15,6 +15,7 @@
 #include "src/pc/djui/djui.h"
 #include "src/pc/djui/djui_panel_pause.h"
 #include "src/saturn/saturn.h"
+#include "src/saturn/ui/saturn_imgui.h"
 
 static int keyboard_buttons_down;
 
@@ -51,6 +52,8 @@ bool keyboard_on_key_down(int scancode) {
 
 bool keyboard_on_key_up(int scancode) {
     djui_interactable_on_key_up(scancode);
+
+    imgui_handle_binds(scancode);
 
     int mapped = keyboard_map_scancode(scancode);
     keyboard_buttons_down &= ~mapped;

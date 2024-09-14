@@ -97,10 +97,17 @@ unsigned int configKeyDUp[MAX_BINDS]        = { 0x0147,     0x100b,     VK_INVAL
 unsigned int configKeyDDown[MAX_BINDS]      = { 0x014f,     0x100c,     VK_INVALID };
 unsigned int configKeyDLeft[MAX_BINDS]      = { 0x0153,     0x100d,     VK_INVALID };
 unsigned int configKeyDRight[MAX_BINDS]     = { 0x0151,     0x100e,     VK_INVALID };
-unsigned int configKeyConsole[MAX_BINDS]    = { 0x0029,     0x003B,     VK_INVALID };
+unsigned int configKeyConsole[MAX_BINDS]    = { 0x0029,     0x0058,     VK_INVALID };
 unsigned int configKeyPrevPage[MAX_BINDS]   = { 0x0016,     VK_INVALID, VK_INVALID };
 unsigned int configKeyNextPage[MAX_BINDS]   = { 0x0018,     VK_INVALID, VK_INVALID };
 unsigned int configKeyDisconnect[MAX_BINDS] = { VK_INVALID, VK_INVALID, VK_INVALID };
+unsigned int configKeyPlutoMenu[MAX_BINDS]          = { 0x003B, VK_INVALID, VK_INVALID };
+unsigned int configKeyPlutoScreenshot[MAX_BINDS]    = { 0x003C, VK_INVALID, VK_INVALID };
+unsigned int configKeyPlutoChroma[MAX_BINDS]        = { 0x003D, VK_INVALID, VK_INVALID };
+unsigned int configKeyPlutoFreezeCamera[MAX_BINDS]  = { 0x0021, VK_INVALID, VK_INVALID };
+unsigned int configKeyPlutoHud[MAX_BINDS]           = { 0x003E, VK_INVALID, VK_INVALID };
+unsigned int configKeyPlutoPlayAnim[MAX_BINDS]      = { 0x0018, VK_INVALID, VK_INVALID };
+unsigned int configKeyPlutoPauseAnim[MAX_BINDS]     = { 0x0019, VK_INVALID, VK_INVALID };
 unsigned int configStickDeadzone = 16; // 16*DEADZONE_STEP=4960 (the original default deadzone)
 unsigned int configRumbleStrength = 50;
 // better camera settings
@@ -170,8 +177,8 @@ char         configLastVersion[MAX_CONFIG_STRING] = SM64COOPDX_VERSION;
 
 static const struct ConfigOption options[] = {
     {.name = "fullscreen",                     .type = CONFIG_TYPE_BOOL, .boolValue = &configWindow.fullscreen},
-    {.name = "window_x",                       .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.x},
-    {.name = "window_y",                       .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.y},
+    //{.name = "window_x",                       .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.x},
+    //{.name = "window_y",                       .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.y},
     {.name = "window_w",                       .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.w},
     {.name = "window_h",                       .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.h},
     {.name = "vsync",                          .type = CONFIG_TYPE_BOOL, .boolValue = &configWindow.vsync},
@@ -207,6 +214,15 @@ static const struct ConfigOption options[] = {
     {.name = "key_next",                       .type = CONFIG_TYPE_BIND, .uintValue = configKeyNextPage},
     {.name = "key_disconnect",                 .type = CONFIG_TYPE_BIND, .uintValue = configKeyDisconnect},
     {.name = "key_console",                    .type = CONFIG_TYPE_BIND, .uintValue = configKeyConsole},
+
+    {.name = "key_pluto_menu",                 .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoMenu},
+    {.name = "key_pluto_screenshot",           .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoScreenshot},
+    {.name = "key_pluto_auto_chroma",          .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoChroma},
+    {.name = "key_pluto_freeze_camera",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoFreezeCamera},
+    {.name = "key_pluto_hud",                  .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoHud},
+    {.name = "key_pluto_play_anim",            .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoPlayAnim},
+    {.name = "key_pluto_pause_anim",           .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoPauseAnim},
+
     {.name = "stick_deadzone",                 .type = CONFIG_TYPE_UINT, .uintValue = &configStickDeadzone},
     {.name = "rumble_strength",                .type = CONFIG_TYPE_UINT, .uintValue = &configRumbleStrength},
     {.name = "bettercam_enable",               .type = CONFIG_TYPE_BOOL, .boolValue = &configEnableCamera},

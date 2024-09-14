@@ -18,6 +18,7 @@ extern "C" {
 
     void imgui_init_backend(SDL_Window*, SDL_GLContext);
     void imgui_handle_events(SDL_Event*);
+    void imgui_handle_binds(int);
     void imgui_update();
     extern bool skybox_has_deinit;
     void imgui_capture_screenshot(void*);

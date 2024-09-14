@@ -75,34 +75,32 @@ void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
 
 void imgui_handle_events(SDL_Event* event) {
     ImGui_ImplSDL2_ProcessEvent(event);
-    switch (event->type) {
-        case SDL_KEYDOWN:
-            if (event->key.keysym.sym == SDLK_F12)
-                show_menu = !show_menu;
+}
 
-            if (event->key.keysym.sym == SDLK_F2)
+void imgui_handle_binds(int scancode) {
+    for (int i = 0; i < MAX_BINDS; i++) {
+        if (!gDjuiInMainMenu && !gDjuiChatBoxFocus && !gDjuiConsoleFocus && allow_game_input) {
+            if (scancode == (int)configKeyPlutoMenu[i])
+                show_menu = !show_menu;
+            if (scancode == (int)configKeyPlutoScreenshot[i])
+                capture_screenshot = true;
+            if (scancode == (int)configKeyPlutoChroma[i])
+                auto_chroma = !auto_chroma;
+        
+            if (scancode == (int)configKeyPlutoFreezeCamera[i])
+                freeze_camera = !freeze_camera;
+            if (scancode == (int)configKeyPlutoHud[i])
                 enable_hud = !enable_hud;
 
-            if (event->key.keysym.sym == SDLK_F3)
-                capture_screenshot = true;
-
-            if (event->key.keysym.sym == SDLK_F5)
-                auto_chroma = !auto_chroma;
-
-            if (!gDjuiInMainMenu && !gDjuiChatBoxFocus && !gDjuiConsoleFocus && allow_game_input) {
-                if (event->key.keysym.sym == SDLK_f)
-                    freeze_camera = !freeze_camera;
-
-                if (gMarioStates[0].marioObj && freeze_camera) {
-                    if (event->key.keysym.sym == SDLK_o) {
-                        gMarioStates[0].marioObj->header.gfx.animInfo.animFrame = 0;
-                        override_anim = true;
-                    }
-                    if (event->key.keysym.sym == SDLK_p && override_anim)
-                        pause_anim = !pause_anim;
+            if (gMarioStates[0].marioObj && freeze_camera) {
+                if (scancode == (int)configKeyPlutoPlayAnim[i]) {
+                    gMarioStates[0].marioObj->header.gfx.animInfo.animFrame = 0;
+                    override_anim = true;
                 }
+                if (scancode == (int)configKeyPlutoPauseAnim[i])
+                    pause_anim = !pause_anim;
             }
-            break;
+        }
     }
 }
 
@@ -120,7 +118,7 @@ void imgui_update() {
         // Main Menu
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Menu")) {
-                if (ImGui::MenuItem("Show Menu", "F12", show_menu)) show_menu = false;
+                if (ImGui::MenuItem("Show Menu", NULL, show_menu)) show_menu = false;
                 if (ImGui::BeginMenu("Screenshot")) {
                     ImGui::Checkbox("Hide Skybox", &screenshot_hides_skybox);
 #ifdef __MINGW32__

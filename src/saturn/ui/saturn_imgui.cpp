@@ -53,7 +53,6 @@ bool show_window_model_settings = true;
 bool show_window_animations = true;
 
 bool capture_screenshot;
-bool screenshot_hides_skybox;
 
 void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
     current_window = window;
@@ -122,7 +121,6 @@ void imgui_update() {
             if (ImGui::BeginMenu("Menu")) {
                 if (ImGui::MenuItem("Show Menu", NULL, show_menu)) show_menu = false;
                 if (ImGui::BeginMenu("Screenshot")) {
-                    ImGui::Checkbox("Hide Skybox", &screenshot_hides_skybox);
 #ifdef __MINGW32__
                     if (ImGui::Button("Copy to Clipboard")) capture_screenshot = true;
 #else
@@ -242,7 +240,6 @@ void imgui_update() {
 
 bool skybox_has_deinit = false;
 void imgui_capture_screenshot(void* buffer) {
-    // Create a new single-sample framebuffer and texture
     GLuint resolve_framebuffer_id;
     GLuint resolve_texture_id;
     glGenFramebuffers(1, &resolve_framebuffer_id);
@@ -255,85 +252,56 @@ void imgui_capture_screenshot(void* buffer) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, resolve_texture_id, 0);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        //fprintf(stderr, "Failed to create resolve framebuffer\n");
-        return;
-    }
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, (GLuint)(intptr_t)buffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolve_framebuffer_id);
+        glBlitFramebuffer(0, 0, gfx_current_dimensions.width, gfx_current_dimensions.height, 0, gfx_current_dimensions.height ,gfx_current_dimensions.width, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glBindFramebuffer(GL_FRAMEBUFFER, resolve_framebuffer_id);
 
-    // Bind the multisample framebuffer for reading and the single-sample framebuffer for drawing
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, (GLuint)(intptr_t)buffer);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolve_framebuffer_id);
-
-    // Use glBlitFramebuffer to copy the content
-    glBlitFramebuffer(0, 0, gfx_current_dimensions.width, gfx_current_dimensions.height, 0, 0, gfx_current_dimensions.width, gfx_current_dimensions.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    // Bind the single-sample framebuffer for reading
-    glBindFramebuffer(GL_FRAMEBUFFER, resolve_framebuffer_id);
-
-    // Allocate memory for the pixel data
-    int width = gfx_current_dimensions.width;
-    int height = gfx_current_dimensions.height;
-    unsigned char* pixels = (unsigned char*)malloc(4 * width * height);
-
-    // Read the pixel data from the single-sample framebuffer
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-    // Flip the image vertically
-    for (int y = 0; y < height / 2; ++y) {
-        for (int x = 0; x < width; ++x) {
-            int top_index = (y * width + x) * 4;
-            int bottom_index = ((height - 1 - y) * width + x) * 4;
-            for (int i = 0; i < 4; ++i) {
-                unsigned char temp = pixels[top_index + i];
-                pixels[top_index + i] = pixels[bottom_index + i];
-                pixels[bottom_index + i] = temp;
-            }
-        }
-    }
+        int width = gfx_current_dimensions.width;
+        int height = gfx_current_dimensions.height;
+        unsigned char* pixels = (unsigned char*)malloc(4 * width * height);
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
 #ifdef __MINGW32__
-    BITMAPV5HEADER header = {
-        .bV5Size = sizeof(header),
-        .bV5Width = width,
-        .bV5Height = height, // could be negative to vflip, but some applications do not like it
-        .bV5Planes = 1,
-        .bV5BitCount = 32,
-        .bV5Compression = BI_BITFIELDS,
-        .bV5RedMask   = 0x000000ff, // update masks for whatever RGBA byte order you have
-        .bV5GreenMask = 0x0000ff00,
-        .bV5BlueMask  = 0x00ff0000,
-        .bV5AlphaMask = 0xff000000,
-        .bV5CSType = LCS_WINDOWS_COLOR_SPACE, // required for alpha support
-    };
+        BITMAPV5HEADER header = {
+            .bV5Size = sizeof(header),
+            .bV5Width = width,
+            .bV5Height = height, // could be negative to vflip, but some applications do not like it
+            .bV5Planes = 1,
+            .bV5BitCount = 32,
+            .bV5Compression = BI_BITFIELDS,
+            .bV5RedMask   = 0x000000ff, // update masks for whatever RGBA byte order you have
+            .bV5GreenMask = 0x0000ff00,
+            .bV5BlueMask  = 0x00ff0000,
+            .bV5AlphaMask = 0xff000000,
+            .bV5CSType = LCS_WINDOWS_COLOR_SPACE, // required for alpha support
+        };
 
-    HGLOBAL global = GlobalAlloc(GMEM_MOVEABLE, sizeof(header) + width * height * 4);
-    if (global) {
-        BYTE* buffer = (BYTE*)GlobalLock(global);
-        if (buffer) {
-            CopyMemory(buffer, &header, sizeof(header));
-            // vflip the bitmap manually, for better compatibility
-            for (int i = 0; i < height; i++) {
-                CopyMemory(buffer + sizeof(header) + i * width * 4, pixels + (height - 1 - i) * width * 4, width * 4);
+        HGLOBAL global = GlobalAlloc(GMEM_MOVEABLE, sizeof(header) + width * height * 4);
+        if (global) {
+            BYTE* buffer = (BYTE*)GlobalLock(global);
+            if (buffer) {
+                CopyMemory(buffer, &header, sizeof(header));
+                // vflip the bitmap manually, for better compatibility
+                for (int i = 0; i < height; i++) {
+                    CopyMemory(buffer + sizeof(header) + i * width * 4, pixels + (height - 1 - i) * width * 4, width * 4);
+                }
+                GlobalUnlock(global);
             }
-            GlobalUnlock(global);
+            if (OpenClipboard(NULL)) {
+                EmptyClipboard();
+                SetClipboardData(CF_DIBV5, global);
+                CloseClipboard();
+            }
         }
-        if (OpenClipboard(NULL)) {
-            EmptyClipboard();
-            SetClipboardData(CF_DIBV5, global);
-            CloseClipboard();
-        }
-    }
 #else
-    stbi_write_png("screenshot.png", width, height, 4, pixels, width * 4);
+        stbi_write_png("screenshot.png", width, height, 4, pixels, width * 4);
 #endif
+        free(pixels);
+    }
 
-    // Free the allocated memory
-    free(pixels);
-
-    // Unbind the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Clean up
     glDeleteFramebuffers(1, &resolve_framebuffer_id);
     glDeleteTextures(1, &resolve_texture_id);
 

@@ -42,6 +42,7 @@
 #include "gfx_rendering_api.h"
 
 #include "saturn/ui/saturn_imgui.h"
+#include "saturn/saturn_colors.h"
 
 #define TEX_CACHE_STEP 512
 
@@ -762,7 +763,7 @@ static void gfx_opengl_start_frame(void) {
 }
 
 static void gfx_opengl_end_frame(void) {
-    if (capture_screenshot && (skybox_has_deinit || !screenshot_hides_skybox))
+    if (capture_screenshot && (skybox_has_deinit || !auto_chroma))
         imgui_capture_screenshot((void*)(intptr_t)framebuffer_id);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_id);

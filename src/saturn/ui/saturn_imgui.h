@@ -14,7 +14,6 @@ extern "C" {
     extern bool show_window_model_settings;
     
     extern bool capture_screenshot;
-    extern bool screenshot_hides_skybox;
 
     void imgui_init_backend(SDL_Window*, SDL_GLContext);
     void imgui_handle_events(SDL_Event*);

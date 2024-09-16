@@ -845,7 +845,7 @@ static void geo_process_generated_list(struct GraphNodeGenerated *node) {
 static void geo_process_background(struct GraphNodeBackground *node) {
     Gfx *list = NULL;
 
-    if (capture_screenshot && screenshot_hides_skybox) {
+    if (capture_screenshot && auto_chroma) {
         skybox_has_deinit = true;
         return;
     }
@@ -1245,12 +1245,21 @@ static s32 obj_is_in_view(struct GraphNodeObject *node, Mat4 matrix) {
     return TRUE;
 }
 
+bool node_is_any_player(struct Object *node) {
+    for (s32 i = 0; i < MAX_PLAYERS; i++) {
+        if (gMarioStates[i].marioObj == node) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /**
  * Process an object node.
  */
 static void geo_process_object(struct Object *node) {
     // Chroma Key: Objects
-    if (auto_chroma && !chroma_show_objects && node != gMarioState->marioObj) return;
+    if (auto_chroma && !chroma_show_objects && !node_is_any_player(node)) return;
 
     struct Object* lastProcessingObject = gCurGraphNodeProcessingObject;
     struct MarioState* lastMarioState = gCurGraphNodeMarioState;

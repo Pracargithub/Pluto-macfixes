@@ -96,7 +96,6 @@ std::vector<TexturePath> LoadExpressionTextures(std::string FolderPath, Expressi
                     TexturePath texture;
                     texture.FileName = entry.path().filename().generic_u8string();
                     texture.FilePath = entry.path().generic_u8string();
-                    //texture.RawData = GetTextureData(texture, &texture.Width, &texture.Height);
                     textures.push_back(texture);
                 }
             }
@@ -154,6 +153,19 @@ std::vector<Expression> LoadExpressions(std::string modelFolderPath) {
     return expressions_list;
 }
 
+/* Loads textures from dynos/eyes/ into a global Expression */
+Expression LoadEyesFolder() {
+    Expression VanillaEyes;
+    // Check if the dynos/eyes/ folder exists
+    if (std::filesystem::is_directory("dynos/eyes")) {
+        VanillaEyes.Name = "eyes";
+        VanillaEyes.FolderPath = "dynos/eyes";
+        VanillaEyes.Textures = LoadExpressionTextures(VanillaEyes.FolderPath, VanillaEyes);
+    }
+    return VanillaEyes;
+}
+
+/* Refresh an individual expression's texture images and update changed files */
 void Expression::Refresh() {
     if (std::filesystem::is_directory(std::filesystem::path(this->FolderPath))) {
         for (const auto & entry : std::filesystem::directory_iterator(this->FolderPath)) {
@@ -165,18 +177,6 @@ void Expression::Refresh() {
             }
         }
     }
-}
-
-/* Loads textures from dynos/eyes/ into a global Expression */
-Expression LoadEyesFolder() {
-    Expression VanillaEyes;
-    // Check if the dynos/eyes/ folder exists
-    if (std::filesystem::is_directory("dynos/eyes")) {
-        VanillaEyes.Name = "eyes";
-        VanillaEyes.FolderPath = "dynos/eyes";
-        VanillaEyes.Textures = LoadExpressionTextures(VanillaEyes.FolderPath, VanillaEyes);
-    }
-    return VanillaEyes;
 }
 
 /* Returns the number of "valid expressions" in a list- i.e. expressions that are actually editable in the UI, excluding eyes */
@@ -193,7 +193,7 @@ int GetValidExpressionCount(std::vector<Expression> expressions_list) {
 
 /* Handles texture replacement. Called from gfx_pc.c */
 const void* saturn_bind_texture(const void* input, Object* currentObj) {
-    if (input == nullptr) return input;
+    if (input == nullptr || gDjuiInMainMenu) return input;
     const char* inputTexture = static_cast<const char*>(input);
     const char* outputTexture;
     std::string texName = inputTexture;
@@ -211,9 +211,10 @@ const void* saturn_bind_texture(const void* input, Object* currentObj) {
 
                 // Only support RGBA32 textures
                 if (expression.Format != "rgba32" && !format_warning_dismissed) return input;
-
                 current_expressions[i].Visible = true;
 
+                // Load texture data if it hasn't been loaded yet
+                // This is to prevent the game from crashing when the texture is missing
                 if (gMarioStates[0].marioObj != NULL &&
                     expression.Textures[expression.CurrentIndex].RawData == 0) {
                     current_expressions[i].Textures[expression.CurrentIndex].RawData =  GetTextureData(current_expressions[i].Textures[expression.CurrentIndex],

@@ -149,6 +149,7 @@ s32 act_idle(struct MarioState *m) {
         if (freeze_camera && !enable_head_rotation) {
             saturn_action_idle(m);
         } else {
+            override_anim = false;
             switch (m->actionState) {
                 case 0:
                     set_character_animation(m, CHAR_ANIM_IDLE_HEAD_LEFT);
@@ -1145,7 +1146,7 @@ s32 act_first_person(struct MarioState *m) {
 
     if (freeze_camera && m->playerIndex == 0) {
         saturn_action_idle(m);
-    } else set_character_animation(m, CHAR_ANIM_FIRST_PERSON);
+    } else { set_character_animation(m, CHAR_ANIM_FIRST_PERSON); override_anim = false; }
     return FALSE;
 }
 

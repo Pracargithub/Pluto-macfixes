@@ -29,6 +29,7 @@
 #include "menu/intro_geo.h"
 #include "game/ingame_menu.h"
 #include "game/first_person_cam.h"
+#include "src/saturn/saturn.h"
 
 #ifdef DISCORD_SDK
 #include "pc/discord/discord.h"
@@ -619,6 +620,8 @@ void network_update(void) {
 }
 
 void network_shutdown(bool sendLeaving, bool exiting, bool popup, bool reconnecting) {
+    freeze_camera = false;
+
     if (gDjuiChatBox != NULL) {
         djui_base_destroy(&gDjuiChatBox->base);
         gDjuiChatBox = NULL;

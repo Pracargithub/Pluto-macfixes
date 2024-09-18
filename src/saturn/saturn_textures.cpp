@@ -173,6 +173,7 @@ void Expression::Refresh() {
                 this->Textures = LoadExpressionTextures(this->FolderPath, *this);
                 if (this->CurrentIndex <= this->Textures.size())
                     this->CurrentIndex = 0;
+                // Clear texture data for later re-loading
                 this->Textures[this->CurrentIndex].RawData = 0;
             }
         }
@@ -189,6 +190,14 @@ int GetValidExpressionCount(std::vector<Expression> expressions_list) {
         count++;
     }
     return count;
+}
+
+/* Loads a texture's raw data if it hasn't already */
+void InitTextureData(int exp_index, int tex_index) {
+    if (current_expressions[exp_index].Textures[tex_index].RawData == 0)
+        current_expressions[exp_index].Textures[tex_index].RawData =    GetTextureData(current_expressions[exp_index].Textures[tex_index],
+                                                                        &current_expressions[exp_index].Textures[tex_index].Width,
+                                                                        &current_expressions[exp_index].Textures[tex_index].Height);
 }
 
 /* Handles texture replacement. Called from gfx_pc.c */
@@ -215,12 +224,7 @@ const void* saturn_bind_texture(const void* input, Object* currentObj) {
 
                 // Load texture data if it hasn't been loaded yet
                 // This is to prevent the game from crashing when the texture is missing
-                if (gMarioStates[0].marioObj != NULL &&
-                    expression.Textures[expression.CurrentIndex].RawData == 0) {
-                    current_expressions[i].Textures[expression.CurrentIndex].RawData =  GetTextureData(current_expressions[i].Textures[expression.CurrentIndex],
-                                                                                        &current_expressions[i].Textures[expression.CurrentIndex].Width,
-                                                                                        &current_expressions[i].Textures[expression.CurrentIndex].Height);
-                }
+                InitTextureData(i, expression.CurrentIndex);
 
                 // Custom blink cycle
                 if (expression.Name == "eyes" && current_expressions.size() >= 3 &&
@@ -238,10 +242,12 @@ const void* saturn_bind_texture(const void* input, Object* currentObj) {
                         case 4:
                         case 6:
                             // Eyes Half
+                            InitTextureData(i, expression.BlinkIndex[0]);
                             return expression.Textures[expression.BlinkIndex[0]].RawData;
                         case 1:
                         case 5:
                             // Eyes Closed
+                            InitTextureData(i, expression.BlinkIndex[1]);
                             return expression.Textures[expression.BlinkIndex[1]].RawData;
                     }
                 }

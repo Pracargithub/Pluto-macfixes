@@ -37,11 +37,11 @@ static void djui_panel_display_frame_limit_text_change(struct DjuiBase* caller) 
 
 static void djui_panel_display_msaa_change(UNUSED struct DjuiBase* caller) {
     switch (sMsaaSelection) {
-        case 1:  configWindow.msaa = 2;  break;
-        case 2:  configWindow.msaa = 4;  break;
-        case 3:  configWindow.msaa = 8;  break;
-        case 4:  configWindow.msaa = 16; break;
-        default: configWindow.msaa = 0;  break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:  configWindow.msaa = 2; break;
+        default: configWindow.msaa = 0; break;
     }
 
     if (sMsaaOriginal != configWindow.msaa) {
@@ -115,6 +115,8 @@ void djui_panel_display_create(struct DjuiBase* caller) {
             char* msaaChoices[5] = { DLANG(DISPLAY, OFF), "2x", "4x", "8x", "16x" };
             msaa = djui_selectionbox_create(body, DLANG(DISPLAY, ANTIALIASING), msaaChoices, choiceCount, &sMsaaSelection, djui_panel_display_msaa_change);
         }
+
+        djui_checkbox_create(body, "Hide from OBS", &configWindow.secret_ui, djui_panel_display_apply);
 
         char* drawDistanceChoices[6] = { DLANG(DISPLAY, D0P5X), DLANG(DISPLAY, D1X), DLANG(DISPLAY, D1P5X), DLANG(DISPLAY, D3X), DLANG(DISPLAY, D10X), DLANG(DISPLAY, D100X) };
         djui_selectionbox_create(body, DLANG(DISPLAY, DRAW_DISTANCE), drawDistanceChoices, 6, &configDrawDistance, NULL);

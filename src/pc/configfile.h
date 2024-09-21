@@ -26,6 +26,7 @@ typedef struct {
     bool exiting_fullscreen;
     bool settings_changed;
     unsigned int msaa;
+    bool secret_ui;
 } ConfigWindow;
 
 extern ConfigWindow configWindow;

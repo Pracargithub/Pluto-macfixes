@@ -721,35 +721,37 @@ static void gfx_opengl_start_frame(void) {
         glDisable(GL_MULTISAMPLE);
     }
 
-    glGenFramebuffers(1, &framebuffer_id);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id);
+    if (configWindow.secret_ui || (!configWindow.secret_ui && capture_screenshot && (skybox_has_deinit || !auto_chroma))) {
+        glGenFramebuffers(1, &framebuffer_id);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id);
 
-    if (configWindow.msaa == 2) {
-        // Generate and bind multisample texture
-        glGenTextures(1, &rendertexture_id);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rendertexture_id);
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, configWindow.msaa, GL_RGBA, gfx_current_dimensions.width, gfx_current_dimensions.height, GL_TRUE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rendertexture_id, 0);
+        if (configWindow.msaa == 2) {
+            // Generate and bind multisample texture
+            glGenTextures(1, &rendertexture_id);
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rendertexture_id);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, configWindow.msaa, GL_RGBA, gfx_current_dimensions.width, gfx_current_dimensions.height, GL_TRUE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rendertexture_id, 0);
 
-        // Generate and bind multisample renderbuffer for depth
-        glGenRenderbuffers(1, &depthbuffer_id);
-        glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer_id);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, configWindow.msaa, GL_DEPTH_COMPONENT, gfx_current_dimensions.width, gfx_current_dimensions.height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer_id);
-    } else {
-        // Generate and bind regular texture
-        glGenTextures(1, &rendertexture_id);
-        glBindTexture(GL_TEXTURE_2D, rendertexture_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gfx_current_dimensions.width, gfx_current_dimensions.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rendertexture_id, 0);
+            // Generate and bind multisample renderbuffer for depth
+            glGenRenderbuffers(1, &depthbuffer_id);
+            glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer_id);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, configWindow.msaa, GL_DEPTH_COMPONENT, gfx_current_dimensions.width, gfx_current_dimensions.height);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer_id);
+        } else {
+            // Generate and bind regular texture
+            glGenTextures(1, &rendertexture_id);
+            glBindTexture(GL_TEXTURE_2D, rendertexture_id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gfx_current_dimensions.width, gfx_current_dimensions.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rendertexture_id, 0);
 
-        // Generate and bind regular renderbuffer for depth
-        glGenRenderbuffers(1, &depthbuffer_id);
-        glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer_id);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, gfx_current_dimensions.width, gfx_current_dimensions.height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer_id);
+            // Generate and bind regular renderbuffer for depth
+            glGenRenderbuffers(1, &depthbuffer_id);
+            glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer_id);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, gfx_current_dimensions.width, gfx_current_dimensions.height);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer_id);
+        }
     }
 
     glDisable(GL_SCISSOR_TEST);
@@ -766,9 +768,11 @@ static void gfx_opengl_end_frame(void) {
     if (capture_screenshot && (skybox_has_deinit || !auto_chroma))
         imgui_capture_screenshot((void*)(intptr_t)framebuffer_id);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_id);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, gfx_current_dimensions.width, gfx_current_dimensions.height, 0, 0, gfx_current_dimensions.width, gfx_current_dimensions.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    if (configWindow.secret_ui) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_id);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, gfx_current_dimensions.width, gfx_current_dimensions.height, 0, 0, gfx_current_dimensions.width, gfx_current_dimensions.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
 
     imgui_update();
 

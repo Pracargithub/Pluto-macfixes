@@ -73,11 +73,12 @@ void LoadModelData(int index, bool enabled) {
     DynOS_Pack_SetEnabled(pack, enabled);
     if (!pack->mLoaded) return;
 
+    switch_state_eyes = 0;
+    custom_eyes = false;
     if (IsSaturnModel(index)) {
         active_saturn_model_index = -1;
         
         model_color_code_list = GetColorCodeList(pack->mPath + "/colorcodes");
-
         /*current_color_code = LoadGSFile(model_color_code_list[0], pack->mPath + "/colorcodes");
         PasteGameShark(current_color_code.GameShark, false);
         send_palette_to_network();*/

@@ -127,6 +127,8 @@ bool UsingVanillaEyes(std::string modelFolderPath) {
 /* Loads an expression list into a specified model */
 std::vector<Expression> LoadExpressions(std::string modelFolderPath) {
     std::vector<Expression> expressions_list;
+    switch_state_eyes = 0;
+    custom_eyes = false;
 
     // Check if the model's /expressions folder exists
     if (std::filesystem::is_directory(std::filesystem::path(modelFolderPath + "/expressions"))) {

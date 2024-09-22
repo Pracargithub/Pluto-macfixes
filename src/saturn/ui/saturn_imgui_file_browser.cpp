@@ -142,7 +142,7 @@ bool saturn_file_browser_create_imgui(FileBrowserEntry dir, std::string path, st
             if (do_search) if (filename.find(search_terms[browser_id]) == std::string::npos) continue;
             std::string fullpath = path + entry.name();
 
-            bool selected = selected_paths[browser_id] == fullpath;
+            bool selected = false;
             if (browser_id == "eyes" && current_expressions[exp_index].Textures.size() > 0) {
                 if (current_expressions[exp_index].Textures[current_expressions[exp_index].CurrentIndex].FileName == entry.name()) selected = true;
                 if (current_expressions[exp_index].BlinkIndex[0] != -1 && current_expressions[exp_index].Textures[current_expressions[exp_index].BlinkIndex[0]].FileName == entry.name()) selected = true;

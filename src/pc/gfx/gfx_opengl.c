@@ -707,7 +707,6 @@ static void gfx_opengl_init(void) {
 static void gfx_opengl_on_resize(void) {
 }
 
-bool framebuffer_created;
 GLuint framebuffer_id;
 GLuint depthbuffer_id;
 GLuint rendertexture_id;
@@ -775,13 +774,6 @@ static void gfx_opengl_end_frame(void) {
     }
 
     imgui_update();
-
-    if (framebuffer_created) {
-        glDeleteFramebuffers(1, &framebuffer_id);
-        glDeleteRenderbuffers(1, &depthbuffer_id);
-        glDeleteTextures(1, &rendertexture_id);
-        framebuffer_created = false;
-    }
 }
 
 static void gfx_opengl_finish_render(void) {

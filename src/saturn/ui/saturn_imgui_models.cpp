@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "saturn/saturn.h"
@@ -49,10 +50,7 @@ void OpenEyeSelector() {
         saturn_file_browser_height(150);
         if (saturn_file_browser_show("eyes", 0)) {
             for (int i = 0; i < current_expressions[0].Textures.size(); i++) {
-                std::filesystem::path path = current_expressions[0].Textures[i].FilePath;
-                std::filesystem::path base = current_expressions[0].FolderPath;
-                if (std::filesystem::relative(path, base) == saturn_file_browser_get_selected()) {
-
+                if (current_expressions[0].Textures[i].FilePath.find(saturn_file_browser_get_selected().generic_string()) != std::string::npos) {
                     if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
                         // Custom blink cycle
                         if (current_expressions[0].BlinkIndex[0] == -1) current_expressions[0].BlinkIndex[0] = i;
@@ -149,9 +147,7 @@ void OpenModelExpressionSelector(PackData* pack) {
                         saturn_file_browser_scan_directory(current_expressions[i].FolderPath);
                         if (saturn_file_browser_show_tree("expr_" + std::to_string(i), i)) {
                             for (int j = 0; j < current_expressions[i].Textures.size(); j++) {
-                                std::filesystem::path path = current_expressions[i].Textures[j].FilePath;
-                                std::filesystem::path base = current_expressions[i].FolderPath;
-                                if (std::filesystem::relative(path, base) == saturn_file_browser_get_selected()) {
+                                if (current_expressions[i].Textures[j].FilePath.find(saturn_file_browser_get_selected().generic_string()) != std::string::npos) {
                                     current_expressions[i].CurrentIndex = j;
                                     break;
                                 }

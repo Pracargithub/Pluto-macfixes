@@ -3954,7 +3954,7 @@ static bool InputTextFilterCharacter(ImGuiContext* ctx, unsigned int* p_char, Im
         return false;
 
     // Generic named filters
-    if (apply_named_filters && (flags & (ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsScientific)))
+    if (apply_named_filters && (flags & (ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsLowercase | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsScientific)))
     {
         // The libc allows overriding locale, with e.g. 'setlocale(LC_NUMERIC, "de_DE.UTF-8");' which affect the output/input of printf/scanf to use e.g. ',' instead of '.'.
         // The standard mandate that programs starts in the "C" locale where the decimal point is '.'.
@@ -3994,6 +3994,11 @@ static bool InputTextFilterCharacter(ImGuiContext* ctx, unsigned int* p_char, Im
         if (flags & ImGuiInputTextFlags_CharsUppercase)
             if (c >= 'a' && c <= 'z')
                 c += (unsigned int)('A' - 'a');
+
+        // Turn A-Z into a-z
+        if (flags & ImGuiInputTextFlags_CharsLowercase)
+            if (c >= 'A' && c <= 'Z')
+                c += (unsigned int)('a' - 'A');
 
         if (flags & ImGuiInputTextFlags_CharsNoBlank)
             if (ImCharIsBlankW(c))

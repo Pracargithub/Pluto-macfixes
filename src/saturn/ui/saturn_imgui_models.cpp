@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <algorithm>
 
 #include "saturn/saturn.h"
 #include "saturn/saturn_colors.h"
@@ -325,13 +326,25 @@ void OpenModelSettings() {
 }
 
 std::vector<std::string> popup_color_code_list;
+static char model_search_term[256] = "";
 
 void OpenModelSelector() {
+    if (DynOS_Pack_GetCount() >= 20) {
+        ImGui::SetNextItemWidth(200);
+        ImGui::InputTextWithHint("###model_packs_search", "Search models...", model_search_term, IM_ARRAYSIZE(model_search_term), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CharsLowercase);
+        ImGui::Separator();
+    } else if (model_search_term != "") strcpy(model_search_term, "");
+
     if (ImGui::BeginListBox("###model_packs_list", ImVec2(200, 200))) {
         for (int i = 0; i < DynOS_Pack_GetCount(); i++) {
             PackData* pack = DynOS_Pack_GetFromIndex(i);
             std::string pack_label = pack->mDisplayName.begin();
             std::string pack_id = pack_label + "###model_pack_" + std::to_string(i);
+
+            std::string pack_search_meta = pack_label;
+            std::transform(pack_search_meta.begin(), pack_search_meta.end(), pack_search_meta.begin(),
+                    [](unsigned char c1){ return std::tolower(c1); });
+            if (model_search_term != "" && pack_search_meta.find(model_search_term) == std::string::npos) continue;
 
             ImGui::BeginDisabled(IsSaturnModel(i) && active_saturn_model_index != -1 && active_saturn_model_index != i);
             if (ImGui::Selectable(pack_id.c_str(), &pack->mEnabled)) {

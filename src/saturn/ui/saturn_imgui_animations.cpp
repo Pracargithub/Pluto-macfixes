@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "saturn/saturn.h"
 #include "saturn/saturn_colors.h"
@@ -118,14 +119,15 @@ void OpenAnimationsMenu() {
                 ImGui::BeginDisabled(is_editing_panim);
                 ImGui::BeginChild("###p_anim_select", ImVec2(208, 150), ImGuiChildFlags_Border);
                 ImGui::SetNextItemWidth(208);
-                ImGui::InputTextWithHint("###anim_search", "Search...", animSearchTerm, IM_ARRAYSIZE(animSearchTerm), ImGuiInputTextFlags_AutoSelectAll);
+                ImGui::InputTextWithHint("###anim_search", "Search...", animSearchTerm, IM_ARRAYSIZE(animSearchTerm), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CharsLowercase);
                 ImGui::Separator();
                 for (int n = 0; n < pluto_animations_list.size(); n++) {
                     const bool is_selected = (selected_panim_index == n);
 
-                    if (pluto_animations_list[n].FileName.find(animSearchTerm) == std::string::npos &&
-                        std::string(animSearchTerm) != "")
-                        continue;
+                    std::string name_lower = pluto_animations_list[n].FileName;
+                    std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(),
+                            [](unsigned char c1){ return std::tolower(c1); });
+                    if (animSearchTerm != "" && name_lower.find(animSearchTerm) == std::string::npos) continue;
 
                     if (ImGui::Selectable(pluto_animations_list[n].FileName.c_str(), is_selected)) {
                         selected_panim_index = n;

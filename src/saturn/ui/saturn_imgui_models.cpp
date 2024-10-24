@@ -13,6 +13,7 @@
 #include "saturn/ui/saturn_imgui.h"
 #include "saturn/ui/saturn_imgui_colors.h"
 #include "saturn/ui/saturn_imgui_file_browser.h"
+#include "saturn/libs/imgui/imgui-knobs.h"
 #include "saturn/libs/imgui/imgui.h"
 #include "saturn/libs/imgui/imgui_internal.h"
 #include "saturn/libs/imgui/imgui_impl_sdl.h"
@@ -288,6 +289,28 @@ void OpenSwitchOptions() {
     ImGui::EndDisabled();
 
     ImGui::PopItemWidth();
+    ImGui::Separator();
+    
+    if (gMarioStates[0].marioObj != NULL) {
+    if (ImGuiKnobs::Knob("Angle", &face_angle, -180.f, 180.f, 0.f, "%.0f deg", ImGuiKnobVariant_Dot, 0.f, ImGuiKnobFlags_DragHorizontal))
+        gMarioStates[0].faceAngle[1] = (s16)(face_angle * 182.04f);
+    else
+        face_angle = (float)gMarioStates[0].faceAngle[1] / 182.04;
+    }
+
+    /*ImGui::SetNextItemWidth(150);
+    ImGui::SliderInt("###walkpoint", &walkpoint_speed, 0, 127, "Walkpoint %d");*/
+
+    ImGui::SameLine();
+    ImGuiKnobs::KnobInt("Walkpoint", &walkpoint_speed, 0, 127, 0, "%d", ImGuiKnobVariant_Tick, 0, ImGuiKnobFlags_DragHorizontal);
+    if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+        ImGui::OpenPopup("###walkpointPresets");
+    if (ImGui::BeginPopup("###walkpointPresets")) {
+        if (ImGui::Selectable("Running")) walkpoint_speed = 127;
+        if (ImGui::Selectable("Walking")) walkpoint_speed = 36;
+        if (ImGui::Selectable("Tiptoe")) walkpoint_speed = 25;
+        ImGui::EndPopup();
+    }
 }
 
 void OpenModelSettings() {

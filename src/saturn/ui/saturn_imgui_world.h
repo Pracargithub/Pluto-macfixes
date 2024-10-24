@@ -11,6 +11,7 @@
 extern "C" {
 #endif
     void OpenAutoChromaMenu();
+    void OpenQuickOptions();
 #ifdef __cplusplus
 }
 #endif

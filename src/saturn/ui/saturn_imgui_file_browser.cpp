@@ -127,9 +127,13 @@ void saturn_file_browser_clear() {
     extension_filter = "";
 }
 
+std::string eyes_full_path(std::string path) {
+    return path.substr(path.find("/eyes/") + 6);
+}
 bool saturn_file_browser_create_imgui(FileBrowserEntry dir, std::string path, std::string browser_id, bool do_search, int exp_index) {
     bool clicked = false;
     for (FileBrowserEntry& entry : dir.dir()) {
+        if (entry.name() == "eyes") continue;
         if (entry.is_dir()) {
             if (ImGui::TreeNode(entry.name().c_str())) {
                 clicked |= saturn_file_browser_create_imgui(entry, path + entry.name() + "/", browser_id, do_search, exp_index);
@@ -144,9 +148,9 @@ bool saturn_file_browser_create_imgui(FileBrowserEntry dir, std::string path, st
 
             bool selected = false;
             if (browser_id == "eyes" && current_expressions[exp_index].Textures.size() > 0) {
-                if (current_expressions[exp_index].Textures[current_expressions[exp_index].CurrentIndex].FileName == entry.name()) selected = true;
-                if (current_expressions[exp_index].BlinkIndex[0] != -1 && current_expressions[exp_index].Textures[current_expressions[exp_index].BlinkIndex[0]].FileName == entry.name()) selected = true;
-                if (current_expressions[exp_index].BlinkIndex[1] != -1 && current_expressions[exp_index].Textures[current_expressions[exp_index].BlinkIndex[1]].FileName == entry.name()) selected = true;
+                if (eyes_full_path(current_expressions[exp_index].Textures[current_expressions[exp_index].CurrentIndex].FilePath) == fullpath) selected = true;
+                if (current_expressions[exp_index].BlinkIndex[0] != -1 && eyes_full_path(current_expressions[exp_index].Textures[current_expressions[exp_index].BlinkIndex[0]].FileName) == fullpath) selected = true;
+                if (current_expressions[exp_index].BlinkIndex[1] != -1 && eyes_full_path(current_expressions[exp_index].Textures[current_expressions[exp_index].BlinkIndex[1]].FileName) == fullpath) selected = true;
             }
 
             if (ImGui::Selectable(entry.name().c_str(), &selected)) {

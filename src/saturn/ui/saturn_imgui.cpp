@@ -34,13 +34,18 @@ extern "C" {
     #include "pc/djui/djui_chat_box.h"
     #include "pc/djui/djui_console.h"
     #include "pc/djui/djui_interactable.h"
+    #include "pc/djui/djui_hud_utils.h"
     #include "pc/network/network_player.h"
     #include "game/object_collision.h"
     #include "game/camera.h"
     #include "game/mario.h"
+    #include "game/hud.h"
     #include "engine/math_util.h"
     #include "engine/behavior_script.h"
+    #include "game/obj_behaviors.h"
 }
+
+#include "data/dynos.cpp.h"
 
 SDL_Window* current_window = nullptr;
 ImGuiIO io;
@@ -50,6 +55,7 @@ bool show_window_machinima = true;
 bool show_window_cc_editor = true;
 bool show_window_model_settings = true;
 bool show_window_animations = true;
+bool show_window_mario = false;
 
 bool capture_screenshot;
 int screenshot_multiplier = 2;
@@ -118,6 +124,19 @@ void imgui_update() {
         if (gMarioStates[0].marioObj != NULL) {
         SDL_StartTextInput();
 
+        // Model Settings
+        OpenModelSettings();
+        if (show_window_mario && !gDjuiInMainMenu && !gDjuiChatBoxFocus && !gDjuiConsoleFocus && !gInteractableOverridePad &&
+            AnyModelsEnabled() && active_saturn_model_index != -1) {
+                if (ImGui::IsMouseReleased(1)) ImGui::OpenPopup("###model_settings");
+                if (!show_window_model_settings) {
+                    ImGui::BeginTooltip();
+                    ImGui::Text(DynOS_Pack_GetFromIndex(active_saturn_model_index)->mDisplayName.begin());
+                    ImGui::TextDisabled("Right-click to open settings");
+                    ImGui::EndTooltip();
+                }
+        }
+
         // Main Menu
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Menu")) {
@@ -153,10 +172,6 @@ void imgui_update() {
 
             // Models
             if (ImGui::BeginMenu("Avatar")) {
-                ImGui::BeginDisabled(active_saturn_model_index == -1);
-                if (ImGui::MenuItem("Model Settings", NULL, show_window_model_settings)) show_window_model_settings = !show_window_model_settings;
-                ImGui::EndDisabled();
-
                 // Switch Options
                 if (ImGui::BeginMenu("Switches")) {
                     OpenSwitchOptions();
@@ -164,7 +179,7 @@ void imgui_update() {
                 }
 
                 ImGui::BeginDisabled(gMarioStates[0].marioObj == NULL);
-                if (ImGui::BeginMenu("Extra Options")) {
+                if (ImGui::BeginMenu("Extra")) {
                     OpenExtraOptions();
                     ImGui::EndMenu();
                 }
@@ -189,11 +204,6 @@ void imgui_update() {
             ImGui::Begin("Color Code Editor", &show_window_cc_editor, ImGuiWindowFlags_AlwaysAutoResize);
             OpenCCEditor();
             ImGui::End();
-        }
-
-        // Model Packs
-        if (gMarioStates[0].marioObj != NULL) {
-        OpenModelSettings();
         }
 
         // Animation Mixtape
@@ -288,4 +298,39 @@ void imgui_capture_screenshot(void* buffer) {
 
     skybox_has_deinit = false;
     capture_screenshot = false;
+}
+
+void imgui_hud() {
+    if (!is_player_active(&gMarioStates[0])) return;
+    if (gMarioStates[0].marioObj == NULL) return;
+
+    djui_hud_set_resolution(RESOLUTION_N64);
+
+    if (show_menu) {
+        Vec3f pos, out;
+        vec3f_copy(pos, gMarioStates[0].marioObj->header.gfx.pos);
+        if (djui_hud_world_pos_to_screen_pos(pos, out)) {
+            float dist = vec3f_dist(gLakituState.pos, gMarioStates[0].pos);
+            float size = 6.f * 7000.f / dist;
+
+            // Find a golden ratio for our resolution and N64 default (320x240)
+            float scale_y = gfx_current_dimensions.height / 360.f;
+            float new_width = gfx_current_dimensions.width / scale_y;
+            float new_height = gfx_current_dimensions.height;
+
+            // Get the cursor position in N64 coordinates
+            float cursor_x = djui_hud_get_mouse_x() * djui_gfx_get_scale() / scale_y;
+            float cursor_y = djui_hud_get_mouse_y() * djui_gfx_get_scale() / scale_y;
+
+            // Calculate the box coordinates
+            float box_top_left = (out[0] - size / 2) * 1.5f;
+            float box_top_right = (out[0] + size / 2) * 1.5f;
+            float box_bottom_left = (out[1] - size) * 1.5f;
+            float box_bottom_right = (out[1]) * 1.5f;
+
+            show_window_mario = (cursor_x >= box_top_left && cursor_y >= box_bottom_left && cursor_x <= box_top_right && cursor_y <= box_bottom_right);
+            djui_hud_set_color(255, 0, 0, 128);
+            djui_hud_render_rect(out[0] - size / 2.f, out[1] - size, size, size);
+        }
+    }
 }

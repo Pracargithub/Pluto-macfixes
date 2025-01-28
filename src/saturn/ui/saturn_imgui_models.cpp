@@ -351,45 +351,46 @@ void OpenExtraOptions() {
 }
 
 void OpenModelSettings() {
-    if (show_window_model_settings && AnyModelsEnabled() && active_saturn_model_index != -1) {
+    if (AnyModelsEnabled() && active_saturn_model_index != -1) {
         PackData* pack = DynOS_Pack_GetFromIndex(active_saturn_model_index);
         std::string popup_label = pack->mDisplayName.begin();
         popup_label += " Settings###model_settings";
-        ImGui::Begin(popup_label.c_str(), &show_window_model_settings, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_MenuBar);
-        
-        // Switch Options
-        if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("Model")) {
-                if (ImGui::MenuItem("Refresh")) {
-                    current_expressions.clear();
-                    UpdateEditorLabels();
-                    LoadModelData(active_saturn_model_index, pack->mEnabled, false);
+        show_window_model_settings = ImGui::BeginPopup(popup_label.c_str(), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_MenuBar);
+        if (show_window_model_settings) {
+            // Switch Options
+            if (ImGui::BeginMenuBar()) {
+                if (ImGui::BeginMenu("Model")) {
+                    if (ImGui::MenuItem("Refresh")) {
+                        current_expressions.clear();
+                        UpdateEditorLabels();
+                        LoadModelData(active_saturn_model_index, pack->mEnabled, false);
+                    }
+                    ImGui::Checkbox("Show All Expressions", &ignore_expression_visibility);
+                    ImGui::EndMenu();
                 }
-                ImGui::Checkbox("Show All Expressions", &ignore_expression_visibility);
-                ImGui::EndMenu();
+
+                if (ImGui::BeginMenu("Switches")) {
+                    OpenSwitchOptions();
+                    ImGui::EndMenu();
+                }
+                ImGui::BeginDisabled(gMarioStates[0].marioObj == NULL);
+                if (ImGui::BeginMenu("Extra")) {
+                    OpenExtraOptions();
+                    ImGui::EndMenu();
+                }
+                ImGui::EndDisabled();
+                
+                ImGui::EndMenuBar();
             }
 
-            if (ImGui::BeginMenu("Switches")) {
-                OpenSwitchOptions();
-                ImGui::EndMenu();
-            }
-            ImGui::BeginDisabled(gMarioStates[0].marioObj == NULL);
-            if (ImGui::BeginMenu("Extra")) {
-                OpenExtraOptions();
-                ImGui::EndMenu();
-            }
-            ImGui::EndDisabled();
-            
-            ImGui::EndMenuBar();
+            // Model Color Codes
+            if (model_color_code_list.size() > 0)
+                OpenModelCCSelector(pack, model_color_code_list);
+
+            // Expressions
+            OpenModelExpressionSelector(pack);
+            ImGui::EndPopup();
         }
-
-        // Model Color Codes
-        if (model_color_code_list.size() > 0)
-            OpenModelCCSelector(pack, model_color_code_list);
-
-        // Expressions
-        OpenModelExpressionSelector(pack);
-        ImGui::End();
     }
 }
 

@@ -20,6 +20,7 @@ extern "C" {
     void imgui_handle_events(SDL_Event*);
     void imgui_handle_binds(int);
     void imgui_update();
+    void imgui_hud();
     extern bool skybox_has_deinit;
     void imgui_capture_screenshot(void*);
 

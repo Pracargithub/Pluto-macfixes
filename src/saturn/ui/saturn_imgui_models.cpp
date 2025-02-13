@@ -355,7 +355,7 @@ void OpenModelSettings() {
         PackData* pack = DynOS_Pack_GetFromIndex(active_saturn_model_index);
         std::string popup_label = pack->mDisplayName.begin();
         popup_label += " Settings###model_settings";
-        show_window_model_settings = ImGui::BeginPopup(popup_label.c_str(), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_MenuBar);
+        show_window_model_settings = ImGui::BeginPopup(popup_label.c_str(), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar);
         if (show_window_model_settings) {
             // Switch Options
             if (ImGui::BeginMenuBar()) {

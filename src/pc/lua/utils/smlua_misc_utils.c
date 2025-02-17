@@ -147,7 +147,7 @@ void hud_show(void) {
 }
 
 bool hud_is_hidden(void) {
-    return gOverrideHideHud || !enable_hud;
+    return gOverrideHideHud || freeze_camera;
 }
 
 s32 hud_get_value(enum HudDisplayValue type) {

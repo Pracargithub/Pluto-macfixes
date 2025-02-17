@@ -160,8 +160,8 @@ void OpenModelExpressionSelector(PackData* pack) {
             if (!custom_eyes) switch_state_eyes = 0;
             else if (switch_state_eyes <= 3 || switch_state_eyes == 8) switch_state_eyes = 4;
         }
+        OpenEyeSelector();
     }
-    OpenEyeSelector();
 
     // Other Expressions
     if (current_expressions.size() > 1) {
@@ -445,5 +445,13 @@ void OpenModelSelector() {
             }
         }
         ImGui::EndListBox();
+    }
+
+    if (active_saturn_model_index != -1) {
+        if (ImGui::Selectable("Reset", false, ImGuiSelectableFlags_None)) {
+            for (int i = 0; i < DynOS_Pack_GetCount(); i++) {
+                if (IsSaturnModel(i)) LoadModelData(i, false, false);
+            }
+        }
     }
 }

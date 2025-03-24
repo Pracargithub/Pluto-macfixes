@@ -2635,66 +2635,64 @@ s32 exit_c_up(struct Camera *c) {
 
         // Search for an open direction to zoom out in, if the camera is changing to close, free roam,
         // or spiral-stairs mode
-        if (sModeInfo.lastMode == CAMERA_MODE_SPIRAL_STAIRS || sModeInfo.lastMode == CAMERA_MODE_CLOSE
-            || sModeInfo.lastMode == CAMERA_MODE_FREE_ROAM) {
-            if (!freeze_camera) {
-                searching = 1;
-                // Check the whole circle around Mario for an open direction to zoom out to
-                for (sector = 0; sector < 16 && searching == 1; sector++) {
-                    vec3f_set_dist_and_angle(checkFoc, curPos, curDist, 0, curYaw + checkYaw);
+        if ((sModeInfo.lastMode == CAMERA_MODE_SPIRAL_STAIRS || sModeInfo.lastMode == CAMERA_MODE_CLOSE
+            || sModeInfo.lastMode == CAMERA_MODE_FREE_ROAM) && !freeze_camera) {
+            searching = 1;
+            // Check the whole circle around Mario for an open direction to zoom out to
+            for (sector = 0; sector < 16 && searching == 1; sector++) {
+                vec3f_set_dist_and_angle(checkFoc, curPos, curDist, 0, curYaw + checkYaw);
 
-                    // If there are no walls this way,
-                    if (f32_find_wall_collision(&curPos[0], &curPos[1], &curPos[2], 20.f, 50.f) == 0) {
+                // If there are no walls this way,
+                if (f32_find_wall_collision(&curPos[0], &curPos[1], &curPos[2], 20.f, 50.f) == 0) {
 
-                        // Start close to Mario, check for walls, floors, and ceilings all the way to the
-                        // zoomed out distance
-                        for (d = curDist; d < gCameraZoomDist; d += 20.f) {
-                            vec3f_set_dist_and_angle(checkFoc, curPos, d, 0, curYaw + checkYaw);
+                    // Start close to Mario, check for walls, floors, and ceilings all the way to the
+                    // zoomed out distance
+                    for (d = curDist; d < gCameraZoomDist; d += 20.f) {
+                        vec3f_set_dist_and_angle(checkFoc, curPos, d, 0, curYaw + checkYaw);
 
-                            // Check if we're zooming out into a floor or ceiling
-                            ceilHeight = find_ceil(curPos[0], curPos[1] - 150.f, curPos[2], &surface) + -10.f;
-                            if (surface != NULL && ceilHeight < curPos[1]) {
-                                break;
-                            }
-                            floorHeight = find_floor(curPos[0], curPos[1] + 150.f, curPos[2], &surface) + 10.f;
-                            if (surface != NULL && floorHeight > curPos[1]) {
-                                break;
-                            }
-
-                            // Stop checking this direction if there is a wall blocking the way
-                            if (f32_find_wall_collision(&curPos[0], &curPos[1], &curPos[2], 20.f, 50.f) == 1) {
-                                break;
-                            }
+                        // Check if we're zooming out into a floor or ceiling
+                        ceilHeight = find_ceil(curPos[0], curPos[1] - 150.f, curPos[2], &surface) + -10.f;
+                        if (surface != NULL && ceilHeight < curPos[1]) {
+                            break;
+                        }
+                        floorHeight = find_floor(curPos[0], curPos[1] + 150.f, curPos[2], &surface) + 10.f;
+                        if (surface != NULL && floorHeight > curPos[1]) {
+                            break;
                         }
 
-                        // If there was no collision found all the way to the max distance, it's an opening
-                        if (d >= gCameraZoomDist) {
-                            searching = 0;
+                        // Stop checking this direction if there is a wall blocking the way
+                        if (f32_find_wall_collision(&curPos[0], &curPos[1], &curPos[2], 20.f, 50.f) == 1) {
+                            break;
                         }
                     }
 
-                    // Alternate left and right, checking each 1/16th (22.5 degrees) of the circle
-                    if (searching == 1) {
-                        checkYaw = -checkYaw;
-                        if (checkYaw < 0) {
-                            checkYaw -= 0x1000;
-                        } else {
-                            checkYaw += 0x1000;
-                        }
+                    // If there was no collision found all the way to the max distance, it's an opening
+                    if (d >= gCameraZoomDist) {
+                        searching = 0;
                     }
                 }
 
-                // Update the stored focus and pos to the direction found in the search
-                if (searching == 0) {
-                    vec3f_set_dist_and_angle(checkFoc, sCameraStoreCUp.pos, gCameraZoomDist, 0, curYaw + checkYaw);
-                    vec3f_copy(sCameraStoreCUp.focus, checkFoc);
-                    vec3f_sub(sCameraStoreCUp.pos, sMarioCamState->pos);
-                    vec3f_sub(sCameraStoreCUp.focus, sMarioCamState->pos);
+                // Alternate left and right, checking each 1/16th (22.5 degrees) of the circle
+                if (searching == 1) {
+                    checkYaw = -checkYaw;
+                    if (checkYaw < 0) {
+                        checkYaw -= 0x1000;
+                    } else {
+                        checkYaw += 0x1000;
+                    }
                 }
-
-                gCameraMovementFlags |= CAM_MOVE_STARTED_EXITING_C_UP;
-                transition_next_state(c, 15);
             }
+
+            // Update the stored focus and pos to the direction found in the search
+            if (searching == 0) {
+                vec3f_set_dist_and_angle(checkFoc, sCameraStoreCUp.pos, gCameraZoomDist, 0, curYaw + checkYaw);
+                vec3f_copy(sCameraStoreCUp.focus, checkFoc);
+                vec3f_sub(sCameraStoreCUp.pos, sMarioCamState->pos);
+                vec3f_sub(sCameraStoreCUp.focus, sMarioCamState->pos);
+            }
+
+            gCameraMovementFlags |= CAM_MOVE_STARTED_EXITING_C_UP;
+            transition_next_state(c, 15);
         } else {
             newcam_init_settings();
             if (newcam_active == 1) {

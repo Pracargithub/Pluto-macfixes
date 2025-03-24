@@ -27,11 +27,20 @@ extern bool is_editing_panim;
 
 s32 check_common_idle_cancels(struct MarioState *m) {
     if (!m) { return 0; }
-    if (is_editing_panim && enable_custom_anim || override_anim || pause_anim) { return 0; }
     mario_drop_held_object(m);
     if (m->floor && m->floor->normal.y < 0.29237169f) {
         return mario_push_off_steep_floor(m, ACT_FREEFALL, 0);
     }
+
+    if (m->input & INPUT_FIRST_PERSON) {
+        return set_mario_action(m, ACT_FIRST_PERSON, 0);
+    }
+
+    if (m->input & INPUT_OFF_FLOOR) {
+        return set_mario_action(m, ACT_FREEFALL, 0);
+    }
+
+    if (is_editing_panim && enable_custom_anim || override_anim || pause_anim) { return 0; }
 
     if (m->input & INPUT_UNKNOWN_10) {
         return set_mario_action(m, ACT_SHOCKWAVE_BOUNCE, 0);
@@ -41,16 +50,8 @@ s32 check_common_idle_cancels(struct MarioState *m) {
         return set_jumping_action(m, ACT_JUMP, 0);
     }
 
-    if (m->input & INPUT_OFF_FLOOR) {
-        return set_mario_action(m, ACT_FREEFALL, 0);
-    }
-
     if (m->input & INPUT_ABOVE_SLIDE) {
         return set_mario_action(m, ACT_BEGIN_SLIDING, 0);
-    }
-
-    if (m->input & INPUT_FIRST_PERSON) {
-        return set_mario_action(m, ACT_FIRST_PERSON, 0);
     }
 
     if (m->input & INPUT_NONZERO_ANALOG) {
@@ -71,10 +72,11 @@ s32 check_common_idle_cancels(struct MarioState *m) {
 
 s32 check_common_hold_idle_cancels(struct MarioState *m) {
     if (!m) { return 0; }
-    if (is_editing_panim && enable_custom_anim || override_anim || pause_anim) { return 0; }
     if (m->floor && m->floor->normal.y < 0.29237169f) {
         return mario_push_off_steep_floor(m, ACT_HOLD_FREEFALL, 0);
     }
+
+    if (is_editing_panim && enable_custom_anim || override_anim || pause_anim) { return 0; }
 
     if (m->heldObj != NULL && m->heldObj->oInteractionSubtype & INT_SUBTYPE_DROP_IMMEDIATELY) {
         m->heldObj->oInteractionSubtype =

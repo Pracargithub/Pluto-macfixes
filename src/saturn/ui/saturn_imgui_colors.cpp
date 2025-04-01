@@ -262,6 +262,8 @@ void RefreshColorCodeList() {
 
 void SaveActiveColorCode(std::string save_path) {
     std::ofstream ccfile;
+    if (!std::filesystem::is_directory(save_path))
+        std::filesystem::create_directory(save_path);
     ccfile.open(save_path + "/" + std::string(uiCcLabelName) + ".gs");
     ccfile << uiGameShark;
     ccfile.close();

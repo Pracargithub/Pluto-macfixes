@@ -55,7 +55,9 @@ bool show_window_machinima = true;
 bool show_window_cc_editor = true;
 bool show_window_model_settings = true;
 bool show_window_animations = true;
+
 bool show_window_mario = false;
+int modelw_x, modelw_y, modelw_s;
 
 bool capture_screenshot;
 int screenshot_multiplier = 1;
@@ -129,14 +131,23 @@ void imgui_update() {
 
         // Model Settings
         OpenModelSettings();
-        if (show_window_mario && !gDjuiInMainMenu && !gDjuiChatBoxFocus && !gDjuiConsoleFocus && !gInteractableOverridePad &&
+        if (!gDjuiInMainMenu && !gDjuiChatBoxFocus && !gDjuiConsoleFocus && !gInteractableOverridePad &&
             AnyModelsEnabled() && active_saturn_model_index != -1) {
-                if (ImGui::IsMouseReleased(1) && !ImGui::IsAnyItemHovered()) ImGui::OpenPopup("###model_settings");
-                if (!show_window_model_settings) {
-                    ImGui::BeginTooltip();
-                    ImGui::Text(DynOS_Pack_GetFromIndex(active_saturn_model_index)->mDisplayName.begin());
-                    ImGui::TextDisabled("Right-click to open settings");
-                    ImGui::EndTooltip();
+
+                ImGui::SetNextWindowPos(ImVec2(modelw_x, modelw_y));
+                ImGui::SetNextWindowSize(ImVec2(modelw_s, modelw_s));
+                ImGui::SetNextWindowBgAlpha(0.1f);
+                ImGui::Begin("Model", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
+                ImGui::End();
+
+                if (show_window_mario) {
+                    if (ImGui::IsMouseReleased(1) && !ImGui::IsAnyItemHovered()) ImGui::OpenPopup("###model_settings");
+                    if (!show_window_model_settings) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text(DynOS_Pack_GetFromIndex(active_saturn_model_index)->mDisplayName.begin());
+                        ImGui::TextDisabled("Right-click to open settings");
+                        ImGui::EndTooltip();
+                    }
                 }
         }
 
@@ -336,9 +347,9 @@ void imgui_hud() {
             float box_bottom_right = (out[1]) * 1.5f;
 
             show_window_mario = (cursor_x >= box_top_left && cursor_y >= box_bottom_left && cursor_x <= box_top_right && cursor_y <= box_bottom_right);
-            // Debug
-            /*djui_hud_set_color(255, 0, 0, 128);
-            djui_hud_render_rect(out[0] - size / 2.f, out[1] - size, size, size);*/
+            modelw_x = box_top_left * scale_y;
+            modelw_y = box_bottom_left * scale_y;
+            modelw_s = size * 1.5f * scale_y;
         }
     }
 }

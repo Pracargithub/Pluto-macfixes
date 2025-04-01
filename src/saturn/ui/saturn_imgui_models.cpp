@@ -365,6 +365,7 @@ void OpenModelSettings() {
                         UpdateEditorLabels();
                         LoadModelData(active_saturn_model_index, pack->mEnabled, false);
                     }
+                    ImGui::Separator();
                     ImGui::Checkbox("Show All Expressions", &ignore_expression_visibility);
                     ImGui::EndMenu();
                 }
@@ -448,7 +449,7 @@ void OpenModelSelector() {
     }
 
     if (active_saturn_model_index != -1) {
-        if (ImGui::Selectable("Reset", false, ImGuiSelectableFlags_None)) {
+        if (ImGui::Selectable("Reset", false, ImGuiSelectableFlags_DontClosePopups)) {
             for (int i = 0; i < DynOS_Pack_GetCount(); i++) {
                 if (IsSaturnModel(i)) LoadModelData(i, false, false);
             }

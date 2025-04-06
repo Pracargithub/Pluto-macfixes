@@ -247,7 +247,7 @@ const void* saturn_bind_texture(const void* input, uint32_t format, uint32_t siz
                                                 expression.Textures[expression.CurrentIndex].Height);
 
                 // Custom blink cycle
-                if (expression.Name == "eyes" && current_expressions.size() >= 3 &&
+                if (expression.Name == "eyes" && expression.Textures.size() >= 3 &&
                         expression.BlinkIndex[0] != -1 &&
                         expression.BlinkIndex[1] != -1) {
                     // Create an 8 frame animation cycle (synced with gMarioBlinkAnimation)
@@ -263,11 +263,19 @@ const void* saturn_bind_texture(const void* input, uint32_t format, uint32_t siz
                         case 6:
                             // Eyes Half
                             InitTextureData(i, expression.BlinkIndex[0], (int)tile);
+                            saturn_update_texture_expression((const uint8_t*)expression.Textures[expression.BlinkIndex[0]].RawData,
+                                                tile, size,
+                                                expression.Textures[expression.BlinkIndex[0]].Width,
+                                                expression.Textures[expression.BlinkIndex[0]].Height);
                             return expression.Textures[expression.BlinkIndex[0]].RawData;
                         case 1:
                         case 5:
                             // Eyes Closed
                             InitTextureData(i, expression.BlinkIndex[1], (int)tile);
+                            saturn_update_texture_expression((const uint8_t*)expression.Textures[expression.BlinkIndex[1]].RawData,
+                                                tile, size,
+                                                expression.Textures[expression.BlinkIndex[1]].Width,
+                                                expression.Textures[expression.BlinkIndex[1]].Height);
                             return expression.Textures[expression.BlinkIndex[1]].RawData;
                     }
                 }

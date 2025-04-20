@@ -96,37 +96,37 @@ void discord_activity_update(void) {
 
     strncpy(sCurActivity.assets.large_image, "https://poly.dance/swag.gif", 128);
     //strncpy(sCurActivity.assets.large_text, "sm64coopdx Characters", 128);
-    strncpy(sCurActivity.assets.small_image, "icon", 128);
-    strncpy(sCurActivity.assets.small_text, "sm64coopdx Icon", 128);
+    //strncpy(sCurActivity.assets.small_image, "icon", 128);
+    //strncpy(sCurActivity.assets.small_text, "sm64coopdx Icon", 128);
 
     if (gNetworkType != NT_NONE && gNetworkSystem) {
         gNetworkSystem->get_lobby_id(sCurActivity.party.id, 128);
         gNetworkSystem->get_lobby_secret(sCurActivity.secrets.join, 128);
-        sCurActivity.party.size.current_size = network_player_connected_count();
-        sCurActivity.party.size.max_size = gServerSettings.maxPlayers;
+        //sCurActivity.party.size.current_size = network_player_connected_count();
+        //sCurActivity.party.size.max_size = gServerSettings.maxPlayers;
     } else {
         snprintf(sCurActivity.party.id, 128, "%s", "");
         snprintf(sCurActivity.secrets.join, 128, "%s", "");
-        sCurActivity.party.size.current_size = 1;
-        sCurActivity.party.size.max_size = 1;
+        //sCurActivity.party.size.current_size = 1;
+        //sCurActivity.party.size.max_size = 1;
     }
 
     if (sCurActivity.party.size.current_size > 1 || configAmountofPlayers == 1) {
-        strcpy(sCurActivity.state, "Playing!");
+        strcpy(sCurActivity.state, "In-Game");
     } else if (gNetworkType == NT_SERVER) {
-        strcpy(sCurActivity.state, "Waiting for players...");
+        strcpy(sCurActivity.state, "Animating");
     } else {
-        strcpy(sCurActivity.state, "In the menus.");
+        strcpy(sCurActivity.state, "Main Menu");
         sCurActivity.party.size.current_size = 1;
         if (sCurActivity.party.size.max_size < 1) { sCurActivity.party.size.max_size = 1; }
     }
 
-    char details[128] = { 0 };
-    discord_populate_details(details, 128);
+    //char details[128] = { 0 };
+    //discord_populate_details(details, 128);
 
-    if (snprintf(sCurActivity.details, 128, "%s", details) < 0) {
-        LOG_INFO("truncating details");
-    }
+    //if (snprintf(sCurActivity.details, 128, "%s", details) < 0) {
+    //    LOG_INFO("truncating details");
+    //}
 
     if (!has_set_time) {
         sCurActivity.timestamps.start = (int64_t)time(0);

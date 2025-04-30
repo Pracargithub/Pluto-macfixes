@@ -301,7 +301,7 @@ std::vector<PlutoAnim> GetPAnimList(std::string folderPath) {
     std::filesystem::create_directory(folderPath);
     if (std::filesystem::exists(folderPath)) {
         convert_count = 0;
-        for (const auto & entry : std::filesystem::directory_iterator(folderPath)) {
+        for (const auto & entry : std::filesystem::recursive_directory_iterator(folderPath)) {
             std::filesystem::path path = entry.path();
             
             if (std::filesystem::is_directory(path)) continue;
@@ -312,9 +312,9 @@ std::vector<PlutoAnim> GetPAnimList(std::string folderPath) {
                 panim_list.push_back(panim);
             }
             if (path.extension().generic_string() == ".json" &&
-            !std::filesystem::exists(folderPath + "/" + path.stem().generic_string() + ".panim")) {
+            !std::filesystem::exists(path.parent_path().generic_string() + "/" + path.stem().generic_string() + ".panim")) {
                 std::string json_path = path.generic_string();
-                std::string panim_path = folderPath + "/" + path.stem().generic_string() + ".panim";
+                std::string panim_path = path.parent_path().generic_string() + "/" + path.stem().generic_string() + ".panim";
                 std::cout << "Converting " << json_path << " to " << panim_path << std::endl;
                 convert_mcomp_to_panim((char*)json_path.c_str(), (char*)panim_path.c_str());
                 if (!std::filesystem::exists(panim_path)) continue;

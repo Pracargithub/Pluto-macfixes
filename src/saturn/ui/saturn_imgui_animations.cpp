@@ -10,6 +10,7 @@
 #include "saturn/saturn_models.h"
 #include "saturn/saturn_textures.h"
 #include "saturn/saturn_animations.h"
+#include "saturn/ui/saturn_imgui_file_browser.h"
 #include "saturn/libs/imgui/imgui.h"
 #include "saturn/libs/imgui/imgui_internal.h"
 #include "saturn/libs/imgui/imgui_impl_sdl.h"
@@ -123,27 +124,22 @@ void OpenAnimationsMenu() {
         if (pluto_animations_list.size() > 0) {
             if (enable_custom_anim) {
                 ImGui::BeginDisabled(is_editing_panim);
-                ImGui::BeginChild("###p_anim_select", ImVec2(208, 150), ImGuiChildFlags_Border);
-                ImGui::SetNextItemWidth(208);
-                ImGui::InputTextWithHint("###anim_search", "Search...", animSearchTerm, IM_ARRAYSIZE(animSearchTerm), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CharsLowercase);
-                ImGui::Separator();
-                for (int n = 0; n < pluto_animations_list.size(); n++) {
-                    const bool is_selected = (selected_panim_index == n);
-
-                    std::string name_lower = pluto_animations_list[n].FileName;
-                    std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(),
-                            [](unsigned char c1){ return std::tolower(c1); });
-                    if (animSearchTerm != "" && name_lower.find(animSearchTerm) == std::string::npos) continue;
-
-                    if (ImGui::Selectable(pluto_animations_list[n].FileName.c_str(), is_selected)) {
-                        selected_panim_index = n;
-                        current_pluto_anim = LoadPAnim(pluto_animations_list[n].FilePath);
-                        loop_anim = current_pluto_anim.Looping;
-                        mcomp_extra_bone = current_pluto_anim.BoneCount > 20 ? true : false;
-                        if (override_anim && !pause_anim) gMarioStates[0].marioObj->header.gfx.animInfo.animFrame = 0;
+                saturn_file_browser_filter_extension("panim");
+                saturn_file_browser_scan_directory("dynos/anims");
+                saturn_file_browser_height(150);
+                if (saturn_file_browser_show("panim", 0)) {
+                    for (int n = 0; n < pluto_animations_list.size(); n++) {
+                        if (pluto_animations_list[n].FilePath.find(saturn_file_browser_get_selected().generic_string()) != std::string::npos) {
+                            // Overwrite current animation
+                            selected_panim_index = n;
+                            current_pluto_anim = LoadPAnim(pluto_animations_list[n].FilePath);
+                            loop_anim = current_pluto_anim.Looping;
+                            mcomp_extra_bone = current_pluto_anim.BoneCount > 20 ? true : false;
+                            if (override_anim && !pause_anim) gMarioStates[0].marioObj->header.gfx.animInfo.animFrame = 0;
+                            break;
+                        }
                     }
                 }
-                ImGui::EndChild();
                 ImGui::EndDisabled();
 
                 // Metadata

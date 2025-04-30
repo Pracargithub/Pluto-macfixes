@@ -11,6 +11,7 @@
 #include "saturn/saturn.h"
 #include "saturn/saturn_models.h"
 #include "saturn/saturn_textures.h"
+#include "saturn/saturn_animations.h"
 
 class FileBrowserEntry {
 private:
@@ -151,6 +152,8 @@ bool saturn_file_browser_create_imgui(FileBrowserEntry dir, std::string path, st
                 if (eyes_full_path(current_expressions[exp_index].Textures[current_expressions[exp_index].CurrentIndex].FilePath) == fullpath) selected = true;
                 if (current_expressions[exp_index].BlinkIndex[0] != -1 && eyes_full_path(current_expressions[exp_index].Textures[current_expressions[exp_index].BlinkIndex[0]].FilePath) == fullpath) selected = true;
                 if (current_expressions[exp_index].BlinkIndex[1] != -1 && eyes_full_path(current_expressions[exp_index].Textures[current_expressions[exp_index].BlinkIndex[1]].FilePath) == fullpath) selected = true;
+            } else if (browser_id == "panim" && pluto_animations_list.size() > 0) {
+                if (pluto_animations_list[selected_panim_index].FilePath.find(fullpath) != std::string::npos) selected = true;
             }
 
             if (ImGui::Selectable(entry.name().c_str(), &selected)) {
@@ -158,7 +161,7 @@ bool saturn_file_browser_create_imgui(FileBrowserEntry dir, std::string path, st
                 selected_path = fullpath;
                 clicked = true;
             }
-            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && browser_id == "eyes")
                 current_expressions[exp_index].Textures = LoadExpressionTextures(current_expressions[exp_index].FolderPath, current_expressions[exp_index]);
         }
     }
@@ -172,8 +175,10 @@ void saturn_file_browser_tools(std::string id, bool search, int exp_index) {
             free(scanned_paths[last_scanned_path]);
             scanned_paths.erase(last_scanned_path);
         }
-        current_expressions[exp_index].Refresh();
-        UpdateEditorLabels();
+        if (id == "eyes") {
+            current_expressions[exp_index].Refresh();
+            UpdateEditorLabels();
+        }
     }
     if (search) {
         ImGui::SameLine();

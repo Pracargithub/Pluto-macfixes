@@ -22,6 +22,7 @@
 #include "saturn/saturn.h"
 #include "saturn/saturn_colors.h"
 #include "saturn/ui/saturn_imgui.h"
+#include "game/mario_misc.h"
 
 /**
  * This file contains the code that processes the scene graph for rendering.
@@ -1048,6 +1049,12 @@ static void geo_process_shadow(struct GraphNodeShadow *node) {
     Vec3f shadowPosPrev;
     Vec3f animOffset;
     f32 shadowScale;
+
+    if (find_hat_object() != NULL) {
+        if (gCurGraphNodeObject == &find_hat_object()->header.gfx) {
+            node->shadowScale = 0.0f;
+        }
+    }
 
     // Sanity check our stack index, If we above or equal to our stack size. Return to prevent OOB\.
     if ((gMatStackIndex + 1) >= MATRIX_STACK_SIZE) { LOG_ERROR("Preventing attempt to exceed the maximum size %i for our matrix stack with size of %i.", MATRIX_STACK_SIZE - 1, gMatStackIndex); return; }

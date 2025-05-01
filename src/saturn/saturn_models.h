@@ -39,6 +39,8 @@ extern ImVec4 uiCalfShadeColor;
 extern void UpdateEditorFromPalette();
 
 extern bool IsSaturnModel(int);
+extern bool IsAccessoryModel(int);
+extern std::vector<int> accessory_packs;
 extern bool AnyModelsEnabled();
 extern bool IsAllRGBA32(std::vector<Expression>);
 
@@ -48,9 +50,14 @@ extern "C" {
     extern float marioScaleY;
     extern float marioScaleZ;
     extern void LoadModelData(int, bool, bool);
+    extern void LoadAccessories();
     extern void RefreshActiveExpressions();
     extern bool refreshEditorPalette;
     extern int refreshCounter;
+    extern int active_accessory_index;
+    extern int hat_pos[3];
+    extern int hat_rot[3];
+    extern float hat_scale[3];
 #ifdef __cplusplus
 }
 #endif

@@ -206,7 +206,7 @@ void imgui_update() {
             }
 
             // Models
-            if (ImGui::BeginMenu("Avatar")) {
+            if (ImGui::BeginMenu("Avatar")) {      
                 // Switch Options
                 if (ImGui::BeginMenu("Switches")) {
                     OpenSwitchOptions();

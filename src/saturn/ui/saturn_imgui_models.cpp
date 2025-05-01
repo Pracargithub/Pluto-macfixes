@@ -291,6 +291,27 @@ void OpenSwitchOptions() {
     ImGui::PopItemWidth();
 }
 
+void ScaleWidget(std::string label, float* scaleX, float* scaleY, float* scaleZ) {
+    ImGui::PushItemWidth(150);
+    if (ImGui::SliderFloat(label.c_str(), scaleX, 0.f, 5.f, "Scale %.2f", ImGuiSliderFlags_NoRoundToFormat))
+        *scaleY = *scaleX, *scaleZ = *scaleX;
+    if (ImGui::IsItemHovered()) {
+        ImGui::BeginTooltip();
+        ImGui::TextDisabled("Right click for more options");
+        ImGui::EndTooltip();
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+            ImGui::OpenPopup((label + "Presets").c_str());
+    }
+    if (ImGui::BeginPopup((label + "Presets").c_str())) {
+        if (ImGui::MenuItem("Reset")) *scaleX = 1.f, *scaleY = 1.f, *scaleZ = 1.f;
+        ImGui::SliderFloat((label + "_x").c_str(), scaleX, 0.f, 5.f, "X %.2f", ImGuiSliderFlags_NoRoundToFormat);
+        ImGui::SliderFloat((label + "_y").c_str(), scaleY, 0.f, 5.f, "Y %.2f", ImGuiSliderFlags_NoRoundToFormat);
+        ImGui::SliderFloat((label + "_z").c_str(), scaleZ, 0.f, 5.f, "Z %.2f", ImGuiSliderFlags_NoRoundToFormat);
+        ImGui::EndPopup();
+    }
+    ImGui::PopItemWidth();
+}
+
 void OpenExtraOptions() {
     if (gMarioStates[0].marioObj != NULL) {
         ImGui::PushItemWidth(150);
@@ -302,25 +323,7 @@ void OpenExtraOptions() {
         }
         ImGui::Separator();
 
-        if (ImGui::SliderFloat("###linked_scale", &marioScaleX, 0.f, 5.f, "Scale %.2f", ImGuiSliderFlags_NoRoundToFormat))
-            marioScaleY = marioScaleZ = marioScaleX;
-        if (ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            ImGui::TextDisabled("Right click for more options");
-            ImGui::EndTooltip();
-            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-                ImGui::OpenPopup("###scalePresets");
-        }
-        if (ImGui::BeginPopup("###scalePresets")) {
-            if (ImGui::MenuItem("Reset")) {
-                marioScaleX = marioScaleY = marioScaleZ = 1.f;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SliderFloat("###scale_x", &marioScaleX, 0.f, 5.f, "X %.2f", ImGuiSliderFlags_NoRoundToFormat);
-            ImGui::SliderFloat("###scale_y", &marioScaleY, 0.f, 5.f, "Y %.2f", ImGuiSliderFlags_NoRoundToFormat);
-            ImGui::SliderFloat("###scale_z", &marioScaleZ, 0.f, 5.f, "Z %.2f", ImGuiSliderFlags_NoRoundToFormat);
-            ImGui::EndPopup();
-        }
+        ScaleWidget("###linkedScale", &marioScaleX, &marioScaleY, &marioScaleZ);
 
         ImGui::Dummy(ImVec2(15, 0));
         if (ImGuiKnobs::Knob("Angle", &face_angle, -180.f, 180.f, 0.f, "%.0f deg", ImGuiKnobVariant_Dot, 0.f, ImGuiKnobFlags_DragHorizontal))
@@ -355,6 +358,38 @@ void OpenExtraOptions() {
     }
 }
 
+void OpenAccessorySettings() {
+    ImGui::BeginDisabled(accessory_packs.size() <= 0);
+    if (accessory_packs.size() > 0) {
+        if (ImGui::BeginListBox("###accessory_packs_list", ImVec2(150, 100))) {
+            for (int i = 0; i < accessory_packs.size(); i++) {
+                PackData* pack = DynOS_Pack_GetFromIndex(accessory_packs[i]);
+                std::string pack_label = pack->mDisplayName.begin();
+                std::string pack_id = pack_label + "###accessory_pack_" + std::to_string(i);
+
+                ImGui::BeginDisabled(active_accessory_index != accessory_packs[i] && active_accessory_index != -1);
+                if (ImGui::Selectable(pack_id.c_str(), &pack->mEnabled)) {
+                    // Toggle model
+                    LoadModelData(accessory_packs[i], pack->mEnabled, false);
+                    UpdateEditorLabels();
+                }
+                ImGui::EndDisabled();
+
+            }
+            ImGui::EndListBox();
+        }
+        ImGui::BeginDisabled(active_accessory_index == -1);
+        ImGui::Separator();
+        ImGui::PushItemWidth(150);
+        ImGui::InputInt3("Position", hat_pos, ImGuiInputTextFlags_CharsDecimal);
+        ImGui::InputInt3("Rotation", hat_rot, ImGuiInputTextFlags_CharsDecimal);
+        ScaleWidget("###accessoryScale", &hat_scale[0], &hat_scale[1], &hat_scale[2]);
+        ImGui::PopItemWidth();
+        ImGui::EndDisabled();
+    } else ImGui::Text("No accessory packs found");
+    ImGui::EndDisabled();
+}
+
 void OpenModelSettings() {
     if (AnyModelsEnabled() && active_saturn_model_index != -1) {
         PackData* pack = DynOS_Pack_GetFromIndex(active_saturn_model_index);
@@ -371,6 +406,10 @@ void OpenModelSettings() {
                         LoadModelData(active_saturn_model_index, pack->mEnabled, false);
                     }
                     ImGui::Separator();
+                    if (ImGui::BeginMenu("Accessories")) {
+                        OpenAccessorySettings();
+                        ImGui::EndMenu();
+                    }
                     ImGui::Checkbox("Show All Expressions", &ignore_expression_visibility);
                     ImGui::EndMenu();
                 }
@@ -413,6 +452,7 @@ void OpenModelSelector() {
     if (ImGui::BeginListBox("###model_packs_list", ImVec2(200, 200))) {
         for (int i = 0; i < DynOS_Pack_GetCount(); i++) {
             PackData* pack = DynOS_Pack_GetFromIndex(i);
+            if (IsAccessoryModel(i)) continue;
             std::string pack_label = pack->mDisplayName.begin();
             std::string pack_id = pack_label + "###model_pack_" + std::to_string(i);
 

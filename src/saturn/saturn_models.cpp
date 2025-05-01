@@ -63,6 +63,13 @@ ImVec4 uiCalfShadeColor =        ImVec4(64.0f / 255.0f, 0.0f / 255.0f, 127.0f / 
 bool refreshEditorPalette;
 int refreshCounter = 0;
 
+std::vector<int> accessory_packs;
+int active_accessory_index = -1;
+
+int hat_pos[3] = {0, 0, 0};
+int hat_rot[3] = {0, 0, 0};
+float hat_scale[3] = {1.f, 1.f, 1.f};
+
 /* Update our CC Editor colors with our "defaultColor" values.
 This should be called when loading a CC, to insert our new colors into the editor. */
 void UpdateEditorFromPalette() {
@@ -126,9 +133,7 @@ bool IsSaturnModel(int index) {
     }
 
     // Failsafe by checking for Saturn-specific files and folders
-    return (std::filesystem::is_directory(std::filesystem::path(pack->mPath + "/expressions")) ||
-            std::filesystem::is_directory(std::filesystem::path(pack->mPath + "/colorcodes")) ||
-            std::filesystem::exists(std::filesystem::path(pack->mPath + "/model.json")) ||
+    return (std::filesystem::exists(std::filesystem::path(pack->mPath + "/model.json")) ||
             std::filesystem::exists(std::filesystem::path(pack->mPath + "/mario_geo.bin")));
 }
 
@@ -143,16 +148,86 @@ bool IsAllRGBA32(std::vector<Expression> expression_list) {
     return value;
 }
 
+bool IsAccessoryModel(int index) {
+    PackData* pack = DynOS_Pack_GetFromIndex(index);
+
+    if (pack->mLoaded) {
+        for (auto& pair : pack->mGfxData) {
+            for (s32 geoIndex = pair.second->mGeoLayouts.Count() - 1; geoIndex >= 0; geoIndex--) {
+                auto &_GeoNode = pair.second->mGeoLayouts[geoIndex];
+                String _GeoRootName = _GeoNode->mName;
+                if (_GeoRootName == "accessory_geo") return true;
+            }
+        }
+    }
+
+    return (std::filesystem::is_directory(std::filesystem::path(pack->mPath + "/accessory")) ||
+            std::filesystem::exists(std::filesystem::path(pack->mPath + "/accessory_geo.bin")));
+}
+
+void LoadAccessories() {
+    accessory_packs.clear();
+    for (int i = 0; i < DynOS_Pack_GetCount(); i++) {
+        PackData* pack = DynOS_Pack_GetFromIndex(i);
+        if (IsAccessoryModel(i)) accessory_packs.push_back(i);
+    }
+}
+
+void DisableAllAccessories() {
+    for (int i = 0; i < accessory_packs.size(); i++) {
+        if (IsAccessoryModel(i)) {
+            PackData* pack = DynOS_Pack_GetFromIndex(accessory_packs[i]);
+            DynOS_Pack_SetEnabled(pack, false);
+        }
+    }
+}
+
 /* Loads Saturn model data at a given DynOS index. */
 void LoadModelData(int index, bool enabled, bool first_use) {
     PackData* pack = DynOS_Pack_GetFromIndex(index);
+    if (first_use && enabled && IsAccessoryModel(index)) {
+        DynOS_Pack_SetEnabled(pack, false);
+        return;
+    }
+
+    // Disable all accessory models
+    if (AnyModelsEnabled() && !enabled) {
+        for (int i = 0; i < DynOS_Pack_GetCount(); i++) {
+            PackData* pack = DynOS_Pack_GetFromIndex(i);
+            if (pack->mEnabled && i != index && IsAccessoryModel(i)) {
+                DynOS_Pack_SetEnabled(pack, false);
+            }
+        }
+    }
+
     // Attempt to enable pack
     DynOS_Pack_SetEnabled(pack, enabled);
     if (!pack->mLoaded) return;
 
     switch_state_eyes = 0;
     custom_eyes = false;
-    if (IsSaturnModel(index)) {
+    LoadAccessories();
+
+    // ACCESSORIES
+    if (IsAccessoryModel(index) && accessory_packs.size() > 0) {
+        // Load accessory model data
+        if (enabled) {
+            std::vector<Expression> accessory_expressions = LoadExpressions(pack->mPath);
+            for (Expression expression : accessory_expressions) {
+                if (expression.Textures.size() > 0) expression.CurrentIndex = 0;
+            }
+            current_expressions.insert(current_expressions.end(), accessory_expressions.begin(), accessory_expressions.end());
+
+            active_accessory_index = index;
+        } else {
+            active_accessory_index = -1;
+            // Reload the active Saturn model if the accessory is disabled
+            PackData* pack = DynOS_Pack_GetFromIndex(active_saturn_model_index);
+            current_expressions.clear();
+            LoadModelData(active_saturn_model_index, pack->mEnabled, false);
+        }
+    // SATURN MODELS
+    } else if (IsSaturnModel(index)) {
         active_saturn_model_index = -1;
         
         model_color_code_list = GetColorCodeList(pack->mPath + "/colorcodes");
@@ -172,6 +247,10 @@ void LoadModelData(int index, bool enabled, bool first_use) {
         if (enabled || index == DynOS_Pack_GetCount() - 1) {
             current_expressions.clear();
             current_expressions = LoadExpressions(pack->mPath);
+            if (active_accessory_index != -1) {
+                std::vector<Expression> accessory_expressions = LoadExpressions(DynOS_Pack_GetFromIndex(active_accessory_index)->mPath);
+                current_expressions.insert(current_expressions.end(), accessory_expressions.begin(), accessory_expressions.end());
+            }
         }
 
         for (Expression expression : current_expressions) {
@@ -179,7 +258,10 @@ void LoadModelData(int index, bool enabled, bool first_use) {
         }
 
         if (enabled) active_saturn_model_index = index;
-        else active_saturn_model_index = -1;
+        else {
+            active_saturn_model_index = -1;
+            active_accessory_index = -1;
+        }
     }
 }
 

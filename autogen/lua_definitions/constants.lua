@@ -10510,7 +10510,10 @@ E_MODEL_WARIOS_WING_CAP = 379
 E_MODEL_WARIOS_WINGED_METAL_CAP = 380
 
 --- @type ModelExtendedId
-E_MODEL_MAX = 381
+E_MODEL_ACCESSORY = 381
+
+--- @type ModelExtendedId
+E_MODEL_MAX = 382
 
 --- @type integer
 NO_SOUND = 0

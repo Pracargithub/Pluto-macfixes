@@ -28,6 +28,7 @@
 #include "pc/lua/smlua_hooks.h"
 #include "saturn/saturn.h"
 #include "saturn/saturn_textures.h"
+#include "saturn/saturn_models.h"
 
 #define TOAD_STAR_1_REQUIREMENT gBehaviorValues.ToadStar1Requirement
 #define TOAD_STAR_2_REQUIREMENT gBehaviorValues.ToadStar2Requirement
@@ -437,6 +438,18 @@ Gfx* geo_mario_tilt_torso(s32 callContext, struct GraphNode* node, Mat4* mtx) {
     return NULL;
 }
 
+struct Object *find_hat_object(void) {
+    struct ObjectNode *list = &gObjectLists[OBJ_LIST_DEFAULT];
+    struct Object *obj;
+
+    for (obj = (struct Object *)list->next; obj != (struct Object *)list; obj = (struct Object *)obj->header.next) {
+        if (obj->behavior == segmented_to_virtual(bhvHatFollow)) {
+            return obj;
+        }
+    }
+    return NULL;
+}
+
 /**
  * Makes Mario's head rotate with the camera angle when in C-up mode
  */
@@ -476,6 +489,20 @@ Gfx* geo_mario_head_rotation(s32 callContext, struct GraphNode* node, Mat4* c) {
         get_pos_from_transform_mtx(bodyState->headPos,
                                    *c,
                                    *gCurGraphNodeCamera->matrixPtr);
+
+        // Spawn and update the object to follow Mario's head
+        if (find_hat_object() == NULL) {
+            if (active_accessory_index != -1 && active_saturn_model_index != -1)
+                spawn_object(gMarioObjects[plrIdx], MODEL_ACCESSORY, bhvHatFollow); // Replace MODEL_STAR and bhvStar with desired model and behavior
+        } else {
+            if (active_accessory_index == -1 || active_saturn_model_index == -1) {
+                struct Object *hatObj = find_hat_object();
+                if (hatObj != NULL) {
+                    obj_mark_for_deletion(hatObj);
+                    active_accessory_index = -1;
+                }
+            }
+        }
     }
     return NULL;
 }

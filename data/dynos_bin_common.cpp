@@ -581,6 +581,7 @@ s64 DynOS_Common_ParseModelConstants(const String &_Arg, bool *found) {
     common_constant(COIN_FORMATION_FLAG_ARROW);
     common_constant(COIN_FORMATION_FLAG_FLYING);
     common_constant(MODEL_NONE);
+    common_constant(MODEL_ACCESSORY);
     common_constant(MODEL_MARIO);
     common_constant(MODEL_LEVEL_GEOMETRY_03);
     common_constant(MODEL_LEVEL_GEOMETRY_04);

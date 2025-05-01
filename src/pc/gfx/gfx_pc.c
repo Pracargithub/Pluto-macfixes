@@ -29,6 +29,7 @@
 
 #include "macros.h"
 
+#include "game/mario_misc.h"
 #include "game/rendering_graph_node.h"
 #include "game/object_list_processor.h"
 #include "game/level_update.h"
@@ -827,8 +828,9 @@ static void OPTIMIZE_O3 gfx_sp_vertex(size_t n_vertices, size_t dest_index, cons
 
             int networkIndex = -1;
             for (s32 i = 0; i < MAX_PLAYERS; i++) {
-                if (gMarioStates[i].marioObj != gCurrentObject) { continue; }
-                networkIndex = gNetworkPlayers[i].localIndex;
+                if (gMarioStates[i].marioObj != gCurrentObject &&
+                (find_hat_object() != NULL && gCurrentObject == find_hat_object())) { continue; }
+                    networkIndex = gNetworkPlayers[i].localIndex;
             }
 
             int r = rsp.current_lights[rsp.current_num_lights - 1].col[0];

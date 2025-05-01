@@ -23,6 +23,7 @@
 extern "C" {
     #include "sm64.h"
     #include "game/mario.h"
+    #include "game/mario_misc.h"
     #include "game/level_update.h"
     #include "pc/network/network_player.h"
     #include "saturn/libs/json2panim.h"
@@ -413,6 +414,12 @@ void saturn_play_pluto_animation() {
             custom_animation.length = (s16)current_pluto_anim.Length;
             gMarioStates[0].marioObj->header.gfx.animInfo.curAnim = &custom_animation;
             gMarioStates[0].marioObj->header.gfx.animInfo.animYTrans = 0xBD;
+
+            struct Object* accessory = find_hat_object();
+            if (accessory != NULL) {
+                accessory->header.gfx.animInfo.curAnim = &custom_animation;
+                accessory->header.gfx.animInfo.animYTrans = 0xBD;
+            }
     }
 }
 

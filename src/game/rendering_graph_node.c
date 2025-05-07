@@ -21,7 +21,9 @@
 
 #include "saturn/saturn.h"
 #include "saturn/saturn_colors.h"
+#include "saturn/saturn_models.h"
 #include "saturn/ui/saturn_imgui.h"
+#include "pc/lua/utils/smlua_obj_utils.h"
 #include "game/mario_misc.h"
 
 /**
@@ -800,12 +802,48 @@ static Gfx* create_object_dl(Gfx* dl) {
     return gfx;
 }
 
+int matStackOffset;
+
+void apply_scale() {
+    if (active_accessory_index != -1 && gCurGraphNodeObject != NULL
+    && gCurGraphNodeObject == &find_hat_object()->header.gfx) {
+        if ((gMatStackIndex + 1) >= MATRIX_STACK_SIZE) { LOG_ERROR("Preventing attempt to exceed the maximum size %i for our matrix stack with size of %i.", MATRIX_STACK_SIZE - 1, gMatStackIndex); return; }
+        Vec3f scaleVec;
+        vec3f_set(scaleVec, (f32)hat_scale[0], (f32)hat_scale[0], (f32)hat_scale[0]);
+        mtxf_scale_vec3f(gMatStack[gMatStackIndex + 1], gMatStack[gMatStackIndex], scaleVec);
+        mtxf_scale_vec3f(gMatStackPrev[gMatStackIndex + 1], gMatStackPrev[gMatStackIndex], scaleVec);
+        if (!increment_mat_stack()) { return; }
+        matStackOffset++;
+    }
+}
+
+void apply_translate_rotate() {
+    Mat4 mtxf;
+    Vec3f translation;
+    Vec3s rotation;
+
+    if (active_accessory_index != -1 && gCurGraphNodeObject != NULL
+    && gCurGraphNodeObject == &find_hat_object()->header.gfx) {
+        if ((gMatStackIndex + 1) >= MATRIX_STACK_SIZE) { LOG_ERROR("Preventing attempt to exceed the maximum size %i for our matrix stack with size of %i.", MATRIX_STACK_SIZE - 1, gMatStackIndex); return; }
+        vec3f_set(translation, (f32)hat_pos[0], (f32)hat_pos[2], (f32)hat_pos[1]);
+        vec3s_set(rotation, (s16)hat_rot[0] * 182.04f, (s16)hat_rot[1] * 182.04f, (s16)hat_rot[2] * 182.04f);
+        mtxf_rotate_zxy_and_translate(mtxf, translation, rotation);
+        mtxf_mul(gMatStack[gMatStackIndex + 1], mtxf, gMatStack[gMatStackIndex]);
+        mtxf_mul(gMatStackPrev[gMatStackIndex + 1], mtxf, gMatStackPrev[gMatStackIndex]);
+        if (!increment_mat_stack()) { return; }
+        matStackOffset++;
+    }
+}
+
 /**
  * Process a display list node. It draws a display list without first pushing
  * a transformation on the stack, so all transformations are inherited from the
  * parent node. It processes its children if it has them.
  */
 static void geo_process_display_list(struct GraphNodeDisplayList *node) {
+    apply_translate_rotate();
+    apply_scale();
+
     if (node->displayList != NULL) {
         // Chroma Key: Level Geo
         // DLs will be hidden, unless they are attached to an object
@@ -815,6 +853,9 @@ static void geo_process_display_list(struct GraphNodeDisplayList *node) {
     if (node->node.children != NULL) {
         geo_process_node_and_siblings(node->node.children);
     }
+
+    gMatStackIndex -= matStackOffset;
+    matStackOffset = 0;
 }
 
 /**
@@ -969,7 +1010,11 @@ static void geo_process_animated_part(struct GraphNodeAnimatedPart *node) {
         gCurGraphNodeMarioState->minimumBoneY = fmin(gCurGraphNodeMarioState->minimumBoneY, translated[1] - gCurGraphNodeMarioState->marioObj->header.gfx.pos[1]);
     }
     if (node->displayList != NULL) {
+        apply_translate_rotate();
+        apply_scale();
         geo_append_display_list(create_object_dl(node->displayList), node->node.flags >> 8);
+        gMatStackIndex -= matStackOffset;
+        matStackOffset = 0;
     }
     if (node->node.children != NULL) {
         geo_process_node_and_siblings(node->node.children);

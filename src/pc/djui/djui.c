@@ -94,10 +94,10 @@ void djui_init_late(void) {
         gPanelLanguageOnStartup = true;
         djui_panel_language_create(NULL);
     }
-    if (strcmp(configLastVersion, SM64COOPDX_VERSION)) {
+    /*if (strcmp(configLastVersion, SM64COOPDX_VERSION) != 0) {
         strncpy(configLastVersion, SM64COOPDX_VERSION, MAX_CONFIG_STRING);
         djui_panel_changelog_create(NULL);
-    }
+    }*/
 
     // djui_panel_debug_create();
     djui_cursor_create();

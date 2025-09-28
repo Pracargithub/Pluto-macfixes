@@ -440,6 +440,8 @@ void network_reset_reconnect_and_rehost(void) {
     sNetworkReconnectTimer = 0;
     sNetworkRehostTimer = 0;
     sNetworkReconnectType = NS_SOCKET;
+
+    gfx_texture_cache_clear();
 }
 
 void network_reconnect_begin(void) {

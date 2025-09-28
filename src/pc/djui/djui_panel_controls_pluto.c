@@ -22,6 +22,7 @@ void djui_panel_controls_pluto_create(struct DjuiBase* caller) {
             djui_bind_create(&bindBody->base, "Toggle HUD", configKeyPlutoHud);
             djui_bind_create(&bindBody->base, "Play Anim", configKeyPlutoPlayAnim);
             djui_bind_create(&bindBody->base, "Pause Anim", configKeyPlutoPauseAnim);
+            djui_bind_create(&bindBody->base, "Flush Textures", configKeyPlutoFlushTextures);
         }
 
         djui_button_create(body, DLANG(MENU, BACK), DJUI_BUTTON_STYLE_BACK, djui_panel_menu_back);

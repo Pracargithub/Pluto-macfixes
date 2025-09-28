@@ -31,6 +31,7 @@ void gfx_end_frame(void);
 void gfx_precache_textures(void);
 void gfx_shutdown(void);
 void gfx_pc_precomp_shader(uint32_t rgb1, uint32_t alpha1, uint32_t rgb2, uint32_t alpha2, uint32_t flags);
+void gfx_texture_cache_clear(void);
 
 extern void saturn_update_texture_expression(const uint8_t* addr, uint8_t tile, uint32_t size, int width, int height);
 

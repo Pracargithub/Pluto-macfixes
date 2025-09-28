@@ -128,6 +128,9 @@ void imgui_handle_binds(int scancode) {
                 if (scancode == (int)configKeyPlutoPauseAnim[i])
                     pause_anim = !pause_anim;
             }
+
+            if (scancode == (int)configKeyPlutoFlushTextures[i])
+                gfx_texture_cache_clear();
         }
     }
 }

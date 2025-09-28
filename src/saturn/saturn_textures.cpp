@@ -174,9 +174,9 @@ std::vector<Expression> LoadExpressions(std::string modelFolderPath) {
 Expression LoadEyesFolder() {
     Expression VanillaEyes;
     // Check if the dynos/eyes/ folder exists
-    if (std::filesystem::is_directory("dynos/eyes")) {
+    if (std::filesystem::is_directory(std::string(sys_user_path()).append("/dynos/eyes"))) {
         VanillaEyes.Name = "eyes";
-        VanillaEyes.FolderPath = "dynos/eyes";
+        VanillaEyes.FolderPath = std::string(sys_user_path()).append("/dynos/eyes");
         VanillaEyes.Textures = LoadExpressionTextures(VanillaEyes.FolderPath, VanillaEyes);
     }
     return VanillaEyes;

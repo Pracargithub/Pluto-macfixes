@@ -257,7 +257,7 @@ void SparkilizeEditor() {
 
 void RefreshColorCodeList() {
     color_code_list.clear();
-    color_code_list = GetColorCodeList("dynos/colorcodes");
+    color_code_list = GetColorCodeList(std::string(sys_user_path()).append("/dynos/colorcodes"));
     UpdatePaletteFromEditor(0);
     send_palette_to_network();
 }
@@ -292,7 +292,7 @@ void OpenCCSelector() {
             uiCcListId = n + 1;
 
             // Overwrite current color code
-            current_color_code = LoadGSFile(color_code_list[n], "dynos/colorcodes");
+            current_color_code = LoadGSFile(color_code_list[n], std::string(sys_user_path()).append("/dynos/colorcodes"));
             PasteGameShark(current_color_code.GameShark, false);
             UpdateEditorFromPalette();
             UpdatePaletteFromEditor(0);
@@ -306,7 +306,7 @@ void OpenCCSelector() {
             }
             if (ImGui::Button("Copy GS to Clipboard")) {
                 ImGui::LogToClipboard();
-                ColorCode paste = LoadGSFile(color_code_list[n], "dynos/colorcodes");
+                ColorCode paste = LoadGSFile(color_code_list[n], std::string(sys_user_path()).append("/dynos/colorcodes"));
                 ImGui::LogText(paste.GameShark.c_str());
                 ImGui::LogFinish();
             }
@@ -319,7 +319,7 @@ void OpenCCSelector() {
             ImGui::EndPopup();
         }
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            ColorCode dragging = LoadGSFile(color_code_list[n], "dynos/colorcodes");
+            ColorCode dragging = LoadGSFile(color_code_list[n], std::string(sys_user_path()).append("/dynos/colorcodes"));
             dragging.IsModel = false;
             ImGui::SetDragDropPayload("COLORCODE", &dragging, sizeof(ColorCode));
             ImGui::Text(dragging.Name.c_str());
@@ -375,9 +375,9 @@ void OpenCCEditor() {
             ImGui::PopItemWidth();
             if (ImGui::Button("Add to List")) {
                 UpdatePaletteFromEditor(0);
-                if (std::filesystem::exists("dynos/colorcodes/" + current_color_code.Name + ".gs"))
+                if (std::filesystem::exists(std::string(sys_user_path()).append("/dynos/colorcodes/") + current_color_code.Name + ".gs"))
                     ImGui::OpenPopup("###overwrite_gs");
-                else SaveActiveColorCode("dynos/colorcodes");
+                else SaveActiveColorCode(std::string(sys_user_path()).append("/dynos/colorcodes"));
             }
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
                 ColorCode dragging;
@@ -392,7 +392,7 @@ void OpenCCEditor() {
             if (ImGui::BeginPopup("###overwrite_gs")) {
                 ImGui::Text("Overwrite %s.gs? This action is irreversible!", uiCcLabelName);
                 if (ImGui::Button("Yes")) {
-                    SaveActiveColorCode("dynos/colorcodes");
+                    SaveActiveColorCode(std::string(sys_user_path()).append("/dynos/colorcodes"));
                     ImGui::CloseCurrentPopup();
                 } ImGui::SameLine();
                 if (ImGui::Button("No")) ImGui::CloseCurrentPopup();

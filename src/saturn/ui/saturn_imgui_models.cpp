@@ -1,4 +1,8 @@
 #include "saturn_imgui_models.h"
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -526,6 +530,28 @@ void OpenModelSelector() {
             PackData* pack = DynOS_Pack_GetFromIndex(i);
             model_packs.push_back(std::make_pair(pack, IsAccessoryModel(i)));
         }
+    }
+
+    if (model_packs.size() <= 0) {
+        ImGui::TextDisabled("No model packs found.");
+        if (ImGui::Button("Open Folder")) {
+            std::string path = std::string(sys_user_path()).append("/dynos/packs");
+#if defined(_WIN32) || defined(_WIN64)
+            // Windows
+            ShellExecuteA(NULL, "open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+#elif __linux__
+            // Linux
+            char command[512];
+            snprintf(command, sizeof(command), "xdg-open %s", path.c_str());
+            system(command);
+#elif __APPLE__
+            // macOS
+            char command[512];
+            snprintf(command, sizeof(command), "open %s", path.c_str());
+            system(command);
+#endif
+        }
+        return;
     }
 
     if (DynOS_Pack_GetCount() >= 20) {

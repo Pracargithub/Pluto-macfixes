@@ -111,13 +111,13 @@ void OpenAnimationsMenu() {
         ImGui::EndDisabled();
         // Refresh the list every time the tab opens
         if (ImGui::IsMouseClicked(0) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            pluto_animations_list = GetPAnimList("dynos/anims");
+            pluto_animations_list = GetPAnimList(std::string(sys_user_path()).append("/dynos/anims"));
 
         if (pluto_animations_list.size() > 0) {
             if (enable_custom_anim) {
                 ImGui::BeginDisabled(is_editing_panim);
                 saturn_file_browser_filter_extension("panim");
-                saturn_file_browser_scan_directory("dynos/anims");
+                saturn_file_browser_scan_directory(std::string(sys_user_path()).append("/dynos/anims"));
                 saturn_file_browser_height(150);
                 if (saturn_file_browser_show("panim", -1)) {
                     for (int n = 0; n < pluto_animations_list.size(); n++) {

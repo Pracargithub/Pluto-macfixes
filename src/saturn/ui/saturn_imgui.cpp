@@ -79,7 +79,12 @@ int screenshot_size[2] = { 320, 240 };
 char status_text[256] = { 0 };
 
 void imgui_init() {
-    pluto_animations_list = GetPAnimList("dynos/anims");
+    std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/colorcodes"));
+    std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/anims"));
+    std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/eyes"));
+    std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/packs"));
+
+    pluto_animations_list = GetPAnimList(std::string(sys_user_path()).append("/dynos/anims"));
 }
 
 void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
@@ -191,8 +196,6 @@ void imgui_update() {
                 ImGui::Separator();
                 if (ImGui::MenuItem("Color Code Editor", NULL, show_window_cc_editor)) show_window_cc_editor = !show_window_cc_editor;
                 if (ImGui::MenuItem("Animation", NULL, show_window_animations, freeze_camera && !enable_head_rotation)) show_window_animations = !show_window_animations;
-                ImGui::Separator();
-                ImGui::Checkbox("Auto Reload Models", &configAutoReloadModels);
                 ImGui::EndMenu();
             }
 

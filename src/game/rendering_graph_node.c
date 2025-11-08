@@ -1022,13 +1022,16 @@ static void geo_process_animated_part(struct GraphNodeAnimatedPart *node) {
     gMatStackIndex--;
 }
 
+/* Returns true if an added custom bone is detected in the scene */
+bool mcomp_bone_detected;
+
 /**
  * Render an animated part. The current animation state is not part of the node
  * but set in global variables. If an animated part is skipped, everything afterwards desyncs.
  */
 static void geo_process_mcomp_extra(struct GraphNodeAnimatedPart *node) {
     // To-do: This
-    if (override_anim && enable_custom_anim && mcomp_bone_detected && enable_extra_bones) {
+    if (override_anim && enable_custom_anim && mcomp_bone_detected && bone_count_matches) {
         geo_process_animated_part(node);
     } else {
         if (node->displayList != NULL) {
@@ -1311,7 +1314,7 @@ bool node_is_any_player(struct Object *node) {
  */
 static void geo_process_object(struct Object *node) {
     if (node == gMarioObject) {
-        current_bone_index = 0;
+        model_bone_count = 0;
     }
 
     // Chroma Key: Objects
@@ -1684,12 +1687,12 @@ void geo_process_node_and_siblings(struct GraphNode *firstNode) {
                         geo_process_object((struct Object *) curGraphNode);
                         break;
                     case GRAPH_NODE_TYPE_ANIMATED_PART:
-                        if (gCurGraphNodeObject == &gMarioObject->header.gfx) current_bone_index += 1;
+                        if (gCurGraphNodeObject == &gMarioObject->header.gfx) model_bone_count += 1;
                         geo_process_animated_part((struct GraphNodeAnimatedPart *) curGraphNode);
                         break;
                     case GRAPH_NODE_TYPE_MCOMP_EXTRA:
                         mcomp_bone_detected = true;
-                        if (gCurGraphNodeObject == &gMarioObject->header.gfx) current_bone_index += 1;
+                        if (gCurGraphNodeObject == &gMarioObject->header.gfx) model_bone_count += 1;
                         geo_process_mcomp_extra((struct GraphNodeAnimatedPart *) curGraphNode);
                         break;
                     case GRAPH_NODE_TYPE_BILLBOARD:

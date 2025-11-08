@@ -35,10 +35,22 @@ extern bool saturn_check_for_chainer();
 
 extern std::vector<PlutoAnim> pluto_animations_list;
 
-extern s16 bone_anim_values[63];
-extern u16 bone_anim_indices[126];
+// Wrapper struct for Vec3f to make it compatible with std::vector
+struct Vec3fWrapper {
+    f32 data[3];
+    
+    f32& operator[](int index) { return data[index]; }
+    const f32& operator[](int index) const { return data[index]; }
+    
+    // Allow implicit conversion to Vec3f for compatibility
+    operator f32*() { return data; }
+    operator const f32*() const { return data; }
+};
+
+extern std::vector<s16> bone_anim_values;
+extern std::vector<u16> bone_anim_indices;
 extern bool is_editing_panim;
-extern Vec3f bone_rotations[21];
+extern std::vector<Vec3fWrapper> bone_rotations;
 
 extern PlutoAnim current_pluto_anim;
 

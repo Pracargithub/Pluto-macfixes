@@ -244,7 +244,7 @@ const char* saturn_animations[] = {
 PlutoAnim current_pluto_anim;
 std::vector<PlutoAnim> pluto_animations_list;
 bool is_editing_panim;
-Vec3f bone_rotations[21];
+std::vector<Vec3fWrapper> bone_rotations;
 
 s16 ReadS16(std::vector<char> data, int index) {
     return ((unsigned int)(unsigned char)data[index] << 8) | (unsigned int)(unsigned char)data[index + 1];
@@ -347,41 +347,25 @@ PlutoAnim ConvertFromVanilla() {
     return plutoAnim;
 }
 
-s16 bone_anim_values[63];
-u16 bone_anim_indices[126] = {
-    0x0001, 0x0000, 0x0001, 0x0001, 0x0001, 0x0002,
-    0x0001, 0x0003, 0x0001, 0x0004, 0x0001, 0x0005,
-    0x0001, 0x0006, 0x0001, 0x0007, 0x0001, 0x0008,
-    0x0001, 0x0009, 0x0001, 0x000A, 0x0001, 0x000B,
-    0x0001, 0x000C, 0x0001, 0x000D, 0x0001, 0x000E,
-    0x0001, 0x000F, 0x0001, 0x0010, 0x0001, 0x0011,
-    0x0001, 0x0012, 0x0001, 0x0013, 0x0001, 0x0014,
-    0x0001, 0x0015, 0x0001, 0x0016, 0x0001, 0x0017,
-    0x0001, 0x0018, 0x0001, 0x0019, 0x0001, 0x001A,
-    0x0001, 0x001B, 0x0001, 0x001C, 0x0001, 0x001D,
-    0x0001, 0x001E, 0x0001, 0x001F, 0x0001, 0x0020,
-    0x0001, 0x0021, 0x0001, 0x0022, 0x0001, 0x0023,
-    0x0001, 0x0024, 0x0001, 0x0025, 0x0001, 0x0026,
-    0x0001, 0x0027, 0x0001, 0x0028, 0x0001, 0x0029,
-    0x0001, 0x002A, 0x0001, 0x002B, 0x0001, 0x002C,
-    0x0001, 0x002D, 0x0001, 0x002E, 0x0001, 0x002F,
-    0x0001, 0x0030, 0x0001, 0x0031, 0x0001, 0x0032,
-    0x0001, 0x0033, 0x0001, 0x0034, 0x0001, 0x0035,
-    0x0001, 0x0036, 0x0001, 0x0037, 0x0001, 0x0038,
-    0x0001, 0x0039, 0x0001, 0x003A, 0x0001, 0x003B,
-    0x0001, 0x003C, 0x0001, 0x003D, 0x0001, 0x003E,
-};
+std::vector<s16> bone_anim_values;
+std::vector<u16> bone_anim_indices;
 
 /* Overwrites the currently played animation with the actively selected PlutoAnim */
 void saturn_play_pluto_animation() {
     if (override_anim && freeze_camera &&
         current_pluto_anim.Values.size() > 0 && current_pluto_anim.Indices.size() > 0) {
+            // Get the bone count from current animation
+            int bone_count = current_pluto_anim.BoneCount + 1;
+            
+            // Resize bone_rotations vector to match the current animation's bone count
+            bone_rotations.resize(bone_count);
+            
             // Pose Editor
             if (!is_editing_panim) {
                 // Copies the current frame's animation data into the pose editor when launched
                 struct AnimInfo* anim_info = &gMarioStates[0].marioObj->header.gfx.animInfo;
                 const u16* index = current_pluto_anim.Indices.data();
-                for (int i = 0; i < 21; i++) {
+                for (int i = 0; i < bone_count; i++) {
                     for (int j = 0; j < 3; j++) {
                         int frame = anim_info->animFrame;
                         int offset = 0;
@@ -392,10 +376,24 @@ void saturn_play_pluto_animation() {
                     }
                 }
             }
+            
+            // Initialize vectors with proper size based on bone count
+            bone_anim_values.resize(bone_count * 3);  // bone_count × 3 components (XYZ)
+            bone_anim_indices.resize(bone_count * 6); // bone_count × 6 indices per bone
+            
             // Generate values
-            for (int i = 0; i < 21; i++) {
+            for (int i = 0; i < bone_count; i++) {
                 for (int j = 0; j < 3; j++) {
                     bone_anim_values[i * 3 + j] = bone_rotations[i][j] * (i == 0 ? 1 : 65536 / 360);
+                }
+            }
+            
+            // Generate indices with repeating pattern: 0x0001, bone_index
+            for (int i = 0; i < bone_count; i++) {
+                int base_index = i * 6;
+                for (int j = 0; j < 3; j++) {
+                    bone_anim_indices[base_index + j * 2] = 0x0001;
+                    bone_anim_indices[base_index + j * 2 + 1] = i * 3 + j;
                 }
             }
 
@@ -407,9 +405,9 @@ void saturn_play_pluto_animation() {
             custom_animation.loopStart = 0;
             custom_animation.loopEnd = (s16)current_pluto_anim.Length;
             custom_animation.unusedBoneCount = current_pluto_anim.Indices.size() / 6 - 1;
-            custom_animation.values = (is_editing_panim) ? bone_anim_values : current_pluto_anim.Values.data();
+            custom_animation.values = (is_editing_panim) ? bone_anim_values.data() : current_pluto_anim.Values.data();
             custom_animation.valuesLength = current_pluto_anim.Values.size();
-            custom_animation.index = (is_editing_panim) ? bone_anim_indices : current_pluto_anim.Indices.data();
+            custom_animation.index = (is_editing_panim) ? bone_anim_indices.data() : current_pluto_anim.Indices.data();
             custom_animation.indexLength = current_pluto_anim.Indices.size();
             custom_animation.length = (s16)current_pluto_anim.Length;
             gMarioStates[0].marioObj->header.gfx.animInfo.curAnim = &custom_animation;

@@ -10,6 +10,7 @@
 #include "saturn/saturn_models.h"
 #include "saturn/saturn_textures.h"
 #include "saturn/saturn_animations.h"
+#include "data/dynos.cpp.h"
 #include "saturn/ui/saturn_imgui_file_browser.h"
 #include "saturn/libs/imgui/imgui.h"
 #include "saturn/libs/imgui/imgui_internal.h"
@@ -28,45 +29,71 @@ extern "C" {
     #include "game/mario.h"
     #include "engine/math_util.h"
     #include "engine/behavior_script.h"
+    #include "data/dynos.c.h"
 }
 
 #include <SDL2/SDL.h>
 
 static char animSearchTerm[128];
 
+// Get bone name for current model and bone index
+const char* GetBoneName(int boneIndex) {
+    static char bone_label[64];
+    
+    // Fallback to smart naming based on bone index patterns
+    if (boneIndex == 0) return "Translation";
+    if (boneIndex == 1) return "Root";
+    
+    int bone_count = current_pluto_anim.BoneCount + 1;
+    
+    // For models with the standard SM64 structure (21 bones)
+    if (bone_count >= 21) {
+        switch (boneIndex) {
+            case 2: return "Butt";
+            case 3: return "Torso";
+            case 4: return "Head";
+            case 5: return "Left Arm";
+            case 6: return "Left Upper Arm";
+            case 7: return "Left Lower Arm";
+            case 8: return "Left Hand";
+            case 9: return "Right Arm";
+            case 10: return "Right Upper Arm";
+            case 11: return "Right Lower Arm";
+            case 12: return "Right Hand";
+            case 13: return "Left Leg";
+            case 14: return "Left Upper Leg";
+            case 15: return "Left Lower Leg";
+            case 16: return "Left Foot";
+            case 17: return "Right Leg";
+            case 18: return "Right Upper Leg";
+            case 19: return "Right Lower Leg";
+            case 20: return "Right Foot";
+        }
+    }
+    
+    // For custom models with different bone counts, use generic names
+    snprintf(bone_label, sizeof(bone_label), "Bone %d", boneIndex);
+    return bone_label;
+}
+
 void BoneEditorWindow() {
     if (current_pluto_anim.Values.size() > 0 && pause_anim && is_editing_panim && override_anim) {
         ImGui::Begin("Animation Pose Editor", &is_editing_panim, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::PushItemWidth(150);
-        int currbone = 0;
-#define BONE_ENTRY(name) ImGui::DragFloat3(name, bone_rotations[currbone++], 1.0f, 0.0f, 0.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
-        BONE_ENTRY("Translation"    );
-        BONE_ENTRY("Root"           );
-        ImGui::Separator();
-        BONE_ENTRY("Body"           );
-        BONE_ENTRY("Torso"          );
-        BONE_ENTRY("Head"           );
-        ImGui::Separator();
-        BONE_ENTRY("Left Arm"       );
-        BONE_ENTRY("Upper Left Arm" );
-        BONE_ENTRY("Lower Left Arm" );
-        BONE_ENTRY("Left Hand"      );
-        ImGui::Separator();
-        BONE_ENTRY("Right Arm"      );
-        BONE_ENTRY("Upper Right Arm");
-        BONE_ENTRY("Lower Right Arm");
-        BONE_ENTRY("Right Hand"     );
-        ImGui::Separator();
-        BONE_ENTRY("Left Leg"       );
-        BONE_ENTRY("Upper Left Leg" );
-        BONE_ENTRY("Lower Left Leg" );
-        BONE_ENTRY("Left Foot"      );
-        ImGui::Separator();
-        BONE_ENTRY("Right Leg"      );
-        BONE_ENTRY("Upper Right Leg");
-        BONE_ENTRY("Lower Right Leg");
-        BONE_ENTRY("Right Foot"     );
-#undef BONE_ENTRY
+        
+        // Add 1 to include the "Translation" bone
+        int bone_count = current_pluto_anim.BoneCount + 1;
+        
+        // Ensure bone_rotations vector is properly sized
+        if (bone_rotations.size() != bone_count) {
+            bone_rotations.resize(bone_count);
+        }
+        
+        for (int i = 0; i < bone_count; i++) {
+            const char* bone_name = GetBoneName(i);
+            ImGui::DragFloat3(bone_name, bone_rotations[i], 1.0f, 0.0f, 0.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
+        }
+        
         ImGui::PopItemWidth();
         ImGui::End();
     }
@@ -95,6 +122,9 @@ void OpenAnimationsMenu() {
                     if (ImGui::Selectable(saturn_animations[n], is_selected)) {
                         selected_anim_index = n;
                         if (override_anim && !pause_anim) gMarioStates[0].marioObj->header.gfx.animInfo.animFrame = 0;
+                        // Reset pose editor state when switching animations to prevent crashes
+                        is_editing_panim = false;
+                        bone_rotations.clear();
                     }
                 }
                 ImGui::EndCombo();
@@ -127,6 +157,9 @@ void OpenAnimationsMenu() {
                             current_pluto_anim = LoadPAnim(pluto_animations_list[n].FilePath);
                             loop_anim = current_pluto_anim.Looping;
                             if (override_anim && !pause_anim) gMarioStates[0].marioObj->header.gfx.animInfo.animFrame = 0;
+                            // Reset pose editor state when switching animations to prevent crashes
+                            is_editing_panim = false;
+                            bone_rotations.clear();
                             break;
                         }
                     }
@@ -155,10 +188,14 @@ void OpenAnimationsMenu() {
         selected_panim_index = 0;
         current_pluto_anim = LoadPAnim(pluto_animations_list[0].FilePath);
         loop_anim = current_pluto_anim.Looping;
+        // Reset pose editor state when switching animations to prevent crashes
+        is_editing_panim = false;
+        bone_rotations.clear();
     }
 
     if (ImGui::Checkbox("Override Animation", &override_anim)) {
         is_editing_panim = false;
+        bone_rotations.clear();
         pause_anim = false;
         if (!override_anim) set_character_animation(&gMarioStates[0], CHAR_ANIM_START_CROUCHING);
     }

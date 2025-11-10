@@ -49,7 +49,7 @@ const char* GetBoneName(int boneIndex) {
     // For models with the standard SM64 structure (21 bones)
     if (bone_count >= 21) {
         switch (boneIndex) {
-            case 2: return "Butt";
+            case 2: return "Pelvis";
             case 3: return "Torso";
             case 4: return "Head";
             case 5: return "Left Arm";
@@ -82,60 +82,39 @@ bool UseBoneDivider(int bone_name_index) {
 }
 
 void BoneEditorWindow() {
-    if (current_bone_count.size() <= 0) return;
+    if (GetTotalBoneCount() <= 0) return;
     if (current_pluto_anim.Values.size() > 0 && pause_anim && is_editing_panim && override_anim) {
         ImGui::Begin("Animation Pose Editor", &is_editing_panim, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::PushItemWidth(150);
         
         // Add 1 to include the "Translation" bone
-        int bone_count = current_pluto_anim.BoneCount + 1;
-        
-        // Ensure bone_rotations vector is properly sized
-        if (bone_rotations.size() != bone_count) {
-            bone_rotations.resize(bone_count);
-        }
+        int bone_count = GetTotalBoneCount() + 1;
 
-        // Calculate max bones once for both warning and loop
-        int max_bones = current_pluto_anim.BoneCount > 20 ? current_pluto_anim.BoneCount - 20 : 0;
-        
-        // Check if we'll have inactive custom bones and show warning
-        int total_custom_bones = 0;
-        for (int j = 0; j < current_bone_count.size(); j++) {
-            if (current_bone_count[j].second) total_custom_bones++;
-        }
-        if (total_custom_bones > max_bones) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f)); // Yellow warning color
-            ImGui::TextWrapped("Warning: %d custom bone(s) exceed the animation limit (%d allowed). Excess bones are disabled.", 
-                              total_custom_bones - max_bones, max_bones);
-            ImGui::PopStyleColor();
-        }
-
-        int bone_name_index = 0;
-        int custom_bone_count = 0;
-        
+        int bone_name_index = 0, num_custom_bones = 0;
         for (int i = 0; i < bone_count; i++) {
-            if (UseBoneDivider(bone_name_index)) ImGui::Separator();
             
+            if (UseBoneDivider(bone_name_index)) ImGui::Separator();
             const char* bone_name;
-            bool is_custom_bone = i > 0 && current_bone_count[i-1].second;
-            if (is_custom_bone) custom_bone_count++;
+            bool is_custom_bone = i > 0 && i < model_bone_list.size() + 1 && model_bone_list[i-1].second;
             
             if (is_custom_bone) {
                 if (!UseBoneDivider(bone_name_index)) ImGui::Separator();
                 bone_name = ("> Custom " + std::to_string(i) + " <").c_str();
+                num_custom_bones++;
             } else {
                 bone_name = GetBoneName(bone_name_index);
                 bone_name_index++;
             }
-            bool is_disabled = i > current_bone_count.size() || (is_custom_bone && custom_bone_count > max_bones);
-            ImGui::BeginDisabled(is_disabled);
             ImGui::DragFloat3(bone_name, bone_rotations[i], 1.0f, 0.0f, 0.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::EndDisabled();
 
             // Add button for custom bones to shift values down
-            if (is_custom_bone && custom_bone_count <= max_bones) {
+            // This helps to fix the bone order without manually entering values
+            if (is_custom_bone) {
                 ImGui::PushID(i);
                 if (ImGui::SmallButton("Push Values Down")) {
+                    if (bone_rotations.size() != bone_count)
+                        bone_rotations.resize(bone_count);
+
                     // Shift all values from current position downward
                     for (int j = bone_count - 1; j > i; j--) {
                         if (j - 1 >= 0) {
@@ -185,6 +164,8 @@ void OpenAnimationsMenu() {
                         // Reset pose editor state when switching animations to prevent crashes
                         is_editing_panim = false;
                         bone_rotations.clear();
+                        // Force bone count recalculation on next frame
+                        ResetBoneCountList();
                     }
                 }
                 ImGui::EndCombo();
@@ -220,6 +201,8 @@ void OpenAnimationsMenu() {
                             // Reset pose editor state when switching animations to prevent crashes
                             is_editing_panim = false;
                             bone_rotations.clear();
+                            // Force bone count recalculation on next frame
+                            ResetBoneCountList();
                             break;
                         }
                     }
@@ -257,6 +240,8 @@ void OpenAnimationsMenu() {
         is_editing_panim = false;
         bone_rotations.clear();
         pause_anim = false;
+        // Force bone count recalculation on next frame
+        ResetBoneCountList();
         if (!override_anim) set_character_animation(&gMarioStates[0], CHAR_ANIM_START_CROUCHING);
     }
     ImGui::Separator();

@@ -355,8 +355,8 @@ void saturn_play_pluto_animation() {
     if (override_anim && freeze_camera &&
         current_pluto_anim.Values.size() > 0 && current_pluto_anim.Indices.size() > 0) {
             // Get the bone count from current animation
-            int bone_count = (current_bone_count.size() > current_pluto_anim.BoneCount ? current_bone_count.size() : current_pluto_anim.BoneCount) + 1;
-            
+            int bone_count = GetTotalBoneCount() + 1;
+
             // Resize bone_rotations vector to match the current animation's bone count
             bone_rotations.resize(bone_count);
             
@@ -404,11 +404,10 @@ void saturn_play_pluto_animation() {
             custom_animation.startFrame = 0;
             custom_animation.loopStart = 0;
             custom_animation.loopEnd = (s16)current_pluto_anim.Length;
-            custom_animation.unusedBoneCount = current_pluto_anim.Indices.size() / 6 - 1;
-            custom_animation.values = (is_editing_panim) ? bone_anim_values.data() : current_pluto_anim.Values.data();
-            custom_animation.valuesLength = current_pluto_anim.Values.size();
-            custom_animation.index = (is_editing_panim) ? bone_anim_indices.data() : current_pluto_anim.Indices.data();
-            custom_animation.indexLength = current_pluto_anim.Indices.size();
+            custom_animation.values =       (is_editing_panim) ? bone_anim_values.data() : current_pluto_anim.Values.data();
+            custom_animation.valuesLength = (is_editing_panim) ? bone_anim_values.size() : current_pluto_anim.Values.size();
+            custom_animation.index =        (is_editing_panim) ? bone_anim_indices.data() : current_pluto_anim.Indices.data();
+            custom_animation.indexLength =  (is_editing_panim) ? bone_anim_indices.size() : current_pluto_anim.Indices.size();
             custom_animation.length = (s16)current_pluto_anim.Length;
             gMarioStates[0].marioObj->header.gfx.animInfo.curAnim = &custom_animation;
             gMarioStates[0].marioObj->header.gfx.animInfo.animYTrans = 0xBD;
@@ -438,26 +437,50 @@ bool saturn_check_for_chainer() {
 }
 
 // index, is_custom
-std::vector<std::pair<int, bool>> current_bone_count;
-int processed_bones = 0;
+std::vector<std::pair<int, bool>> model_bone_list;
+int cached_total_bone_count = 0;
+int cached_custom_bone_count = 0;
+bool bone_count_dirty = true;
 
 void AddToBoneCountList(bool is_custom) {
-    for (auto& pair : current_bone_count) {
-        if (pair.first == current_bone_count.size()) {
+    for (auto& pair : model_bone_list) {
+        if (pair.first == model_bone_list.size()) {
             pair.second = is_custom;
             return;
         }
     }
-    current_bone_count.push_back(std::make_pair(current_bone_count.size(), is_custom));
-}
-void ResetBoneCountList() {
-    current_bone_count.clear();
-    processed_bones = 0;
+    model_bone_list.push_back(std::make_pair(model_bone_list.size(), is_custom));
 }
 
-bool CanProcessExtraBone() {
-    if (current_pluto_anim.BoneCount <= 20) return false;
-    int max_bones = current_pluto_anim.BoneCount - 20;
-    processed_bones++;
-    return processed_bones <= max_bones;
+void ResetBoneCountList() {
+    model_bone_list.clear();
+    bone_count_dirty = true;
 }
+
+void CacheBoneCount() {
+    if (bone_count_dirty && model_bone_list.size() > 0) {
+        cached_total_bone_count = model_bone_list.size();
+        cached_custom_bone_count = 0;
+        
+        for (const auto& pair : model_bone_list) {
+            if (pair.second) {
+                cached_custom_bone_count++;
+            }
+        }
+        
+        bone_count_dirty = false;
+    }
+}
+
+int GetTotalBoneCount() {
+    if (pause_anim && cached_total_bone_count > 0) return cached_total_bone_count;
+    return current_pluto_anim.BoneCount + 1;
+}
+
+bool ExtraBoneInBounds(int index) {
+    if (is_editing_panim) return true;
+    // For custom animations, only allow processing extra bones if we haven't exceeded 
+    // the number of bones that this specific PlutoAnim is designed to handle
+    return index <= current_pluto_anim.BoneCount - 20;
+}
+

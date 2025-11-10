@@ -1025,6 +1025,7 @@ static void geo_process_animated_part(struct GraphNodeAnimatedPart *node) {
 
 /* Returns true if an added custom bone is detected in the scene */
 bool mcomp_bone_detected;
+int mcomp_bone_index;
 
 /**
  * Render an animated part. The current animation state is not part of the node
@@ -1032,7 +1033,7 @@ bool mcomp_bone_detected;
  */
 static void geo_process_mcomp_extra(struct GraphNodeAnimatedPart *node) {
     // To-do: This
-    if (override_anim && enable_custom_anim && mcomp_bone_detected && CanProcessExtraBone()) {
+    if (override_anim && enable_custom_anim && mcomp_bone_detected && ExtraBoneInBounds(mcomp_bone_index)) {
         geo_process_animated_part(node);
     } else {
         Mat4 matrix;
@@ -1344,8 +1345,10 @@ bool node_is_any_player(struct Object *node) {
  * Process an object node.
  */
 static void geo_process_object(struct Object *node) {
-    if (node == gMarioObject)
+    if (node == gMarioObject) {
         ResetBoneCountList();
+        mcomp_bone_index = 0;
+    }
 
     // Chroma Key: Objects
     if (auto_chroma && !chroma_show_objects && !node_is_any_player(node)) return;
@@ -1521,6 +1524,13 @@ static void geo_process_object(struct Object *node) {
         node->header.gfx.throwMatrix = NULL;
         node->header.gfx.throwMatrixPrev = NULL;
     }
+    
+    // Cache bone count after processing Mario's object
+    if (node == gMarioObject) {
+        CacheBoneCount();
+        mcomp_bone_index = 0;
+    }
+    
     gCurGraphNodeProcessingObject = lastProcessingObject;
     gCurGraphNodeMarioState = lastMarioState;
 }
@@ -1721,8 +1731,11 @@ void geo_process_node_and_siblings(struct GraphNode *firstNode) {
                         geo_process_animated_part((struct GraphNodeAnimatedPart *) curGraphNode);
                         break;
                     case GRAPH_NODE_TYPE_MCOMP_EXTRA:
-                        mcomp_bone_detected = true;
-                        if (gCurGraphNodeObject == &gMarioObject->header.gfx) AddToBoneCountList(true);
+                        if (gCurGraphNodeObject == &gMarioObject->header.gfx) {
+                            mcomp_bone_detected = true;
+                            AddToBoneCountList(true);
+                            mcomp_bone_index++;
+                        }
                         geo_process_mcomp_extra((struct GraphNodeAnimatedPart *) curGraphNode);
                         break;
                     case GRAPH_NODE_TYPE_BILLBOARD:

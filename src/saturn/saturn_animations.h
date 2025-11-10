@@ -53,13 +53,17 @@ extern bool is_editing_panim;
 extern std::vector<Vec3fWrapper> bone_rotations;
 
 extern PlutoAnim current_pluto_anim;
-extern std::vector<std::pair<int, bool>> current_bone_count;
+extern std::vector<std::pair<int, bool>> model_bone_list;
+extern int cached_total_bone_count;
+extern int cached_custom_bone_count;
 
 extern "C" {
 #endif    
     extern void AddToBoneCountList(bool is_custom);
     extern void ResetBoneCountList();
-    extern bool CanProcessExtraBone();
+    extern bool ExtraBoneInBounds(int);
+    extern void CacheBoneCount();
+    extern int GetTotalBoneCount();
 #ifdef __cplusplus
 }
 #endif

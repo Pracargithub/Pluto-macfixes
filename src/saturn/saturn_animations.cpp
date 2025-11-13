@@ -484,3 +484,54 @@ bool ExtraBoneInBounds(int index) {
     return index <= current_pluto_anim.BoneCount - 20;
 }
 
+/* Automatically pushes custom bone values down when entering pose editor */
+void AutoPushCustomBones() {
+    if (model_bone_list.size() <= 0) return;
+    
+    int bone_count = GetTotalBoneCount() + 1;
+    if (bone_rotations.size() != bone_count) {
+        bone_rotations.resize(bone_count);
+    }
+    
+    // Count how many custom bones we have
+    int custom_bone_count = 0;
+    for (const auto& pair : model_bone_list) {
+        if (pair.second) {
+            custom_bone_count++;
+        }
+    }
+    
+    // If we have no custom bones, nothing to push
+    if (custom_bone_count == 0) return;
+    
+    // Calculate how many custom bones to push down based on PlutoAnim bone count vs default (20)
+    int default_bone_count = 20;
+    int bones_to_push = custom_bone_count - (current_pluto_anim.BoneCount - default_bone_count);
+    
+    // If we don't need to push any bones, return early
+    if (bones_to_push <= 0) return;
+    
+    // Find and push down the first N custom bones (where N = bones_to_push)
+    int pushed_count = 0;
+    for (int i = 1; i < bone_count && pushed_count < bones_to_push; i++) {
+        bool is_custom_bone = i < model_bone_list.size() + 1 && model_bone_list[i-1].second;
+        
+        if (is_custom_bone) {
+            // Perform push down operation for this custom bone
+            for (int j = bone_count - 1; j > i; j--) {
+                if (j - 1 >= 0) {
+                    bone_rotations[j][0] = bone_rotations[j-1][0];
+                    bone_rotations[j][1] = bone_rotations[j-1][1];
+                    bone_rotations[j][2] = bone_rotations[j-1][2];
+                }
+            }
+            // Reset current bone to 0
+            bone_rotations[i][0] = 0.0f;
+            bone_rotations[i][1] = 0.0f;
+            bone_rotations[i][2] = 0.0f;
+            
+            pushed_count++;
+        }
+    }
+}
+

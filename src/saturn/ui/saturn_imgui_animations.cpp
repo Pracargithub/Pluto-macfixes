@@ -268,7 +268,14 @@ void OpenAnimationsMenu() {
             current_pluto_anim = ConvertFromVanilla();
             saturn_play_pluto_animation();
         }
+        bool was_editing = is_editing_panim;
         is_editing_panim = !is_editing_panim;
+        
+        // Auto-push custom bones when entering pose editor mode
+        if (!was_editing && is_editing_panim) {
+            AutoPushCustomBones();
+        }
+        
         if (!is_editing_panim && !enable_custom_anim) override_anim = false;
     }
     ImGui::EndDisabled();

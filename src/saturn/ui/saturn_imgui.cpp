@@ -42,6 +42,7 @@ bool is_wayland() {
 extern "C" {
     #include "pc/pc_main.h"
     #include "pc/gfx/gfx_pc.h"
+    #include "pc/controller/controller_api.h"
     #include "pc/djui/djui.h"
     #include "pc/djui/djui_chat_box.h"
     #include "pc/djui/djui_console.h"
@@ -71,8 +72,6 @@ bool show_window_animations = true;
 bool show_window_dialog = false;
 
 std::vector<PlayerWindow> player_windows;
-bool show_window_mario = false;
-int modelw_x, modelw_y, modelw_s;
 
 bool capture_screenshot;
 bool screenshot_custom_res;
@@ -84,6 +83,8 @@ char status_text[256] = { 0 };
 char uiDialogText[1024 * 16] = "";
 
 void imgui_init() {
+    // Create directories for Pluto content
+    // These are located at %appdata%/Llennpie/Pluto on Windows, and ~/.local/share/Llennpie/Pluto on Linux
     std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/colorcodes"));
     std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/anims"));
     std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/eyes"));
@@ -117,6 +118,8 @@ void imgui_handle_events(SDL_Event* event) {
 }
 
 void imgui_handle_binds(int scancode) {
+    // Handle Pluto keybinds
+    // These are treated like regular SM64 binds and can be changed in Djui
     for (int i = 0; i < MAX_BINDS; i++) {
         if (!gDjuiInMainMenu && !gDjuiChatBoxFocus && !gDjuiConsoleFocus && allow_game_input && !gInteractableOverridePad) {
             if (scancode == (int)configKeyPlutoMenu[i])
@@ -131,12 +134,17 @@ void imgui_handle_binds(int scancode) {
             if (scancode == (int)configKeyPlutoHud[i])
                 enable_hud = !enable_hud;
 
-            if (gMarioStates[0].marioObj && freeze_camera) {
+            if (gMarioStates[0].marioObj && freeze_camera && !is_editing_panim) {
                 if (scancode == (int)configKeyPlutoPlayAnim[i]) {
-                    gMarioStates[0].marioObj->header.gfx.animInfo.animFrame = 0;
-                    override_anim = true;
+                    // If play and pause anim keys are the same and animation is active, toggle pause
+                    if (configKeyPlutoPlayAnim[i] == configKeyPlutoPauseAnim[i] && override_anim) {
+                        pause_anim = !pause_anim;
+                    } else {
+                        gMarioStates[0].marioObj->header.gfx.animInfo.animFrame = 0;
+                        override_anim = true;
+                    }
                 }
-                if (scancode == (int)configKeyPlutoPauseAnim[i])
+                else if (scancode == (int)configKeyPlutoPauseAnim[i])
                     pause_anim = !pause_anim;
             }
 
@@ -283,6 +291,8 @@ void imgui_update() {
             ImGui::EndMainMenuBar();
         }
 
+        // Status Bar
+        // Used for displaying extra info (i.e. model auto-reloading)
         ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoFocusOnAppearing;
         if (status_text[0] != '\0') {
@@ -340,6 +350,7 @@ void imgui_update() {
 #include <windows.h>
 #endif
 
+// Timestamped filename for the screenshot
 std::string get_screenshot_name() {
     time_t now = time(0);
     tm* ltm = localtime(&now);

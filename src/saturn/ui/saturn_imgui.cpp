@@ -260,7 +260,7 @@ void imgui_update() {
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Color Code Editor", NULL, show_window_cc_editor)) show_window_cc_editor = !show_window_cc_editor;
-                if (ImGui::MenuItem("Animation", NULL, show_window_animations, freeze_camera && !enable_head_rotation)) show_window_animations = !show_window_animations;
+                if (ImGui::MenuItem("Animation", NULL, show_window_animations, freeze_camera)) show_window_animations = !show_window_animations;
                 if (ImGui::MenuItem("Textbox", NULL, show_window_dialog)) show_window_dialog = !show_window_dialog;
                 ImGui::EndMenu();
             }
@@ -345,7 +345,7 @@ void imgui_update() {
 
         // Animation Mixtape
         if (show_window_animations &&
-            freeze_camera && !enable_head_rotation) {
+            freeze_camera) {
                 ImGui::Begin("Animation Mixtape", &show_window_animations, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
                 OpenAnimationsMenu();
                 ImGui::End();

@@ -151,7 +151,7 @@ s32 act_idle(struct MarioState *m) {
     if (m->actionArg & 1) {
         set_character_animation(m, CHAR_ANIM_STAND_AGAINST_WALL);
     } else {
-        if (freeze_camera && !enable_head_rotation) {
+        if (freeze_camera) {
             saturn_action_idle(m);
         } else {
             override_anim = false;
@@ -498,7 +498,7 @@ s32 act_hold_idle(struct MarioState *m) {
 
     stationary_ground_step(m);
 
-    if (freeze_camera && !enable_head_rotation)
+    if (freeze_camera)
         saturn_action_idle(m);
     else 
         set_character_animation(m, CHAR_ANIM_IDLE_WITH_LIGHT_OBJ);

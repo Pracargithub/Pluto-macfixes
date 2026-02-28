@@ -149,14 +149,33 @@ int saturn_camera_update() {
     return CAM_NORMAL;
 }
 
-/* Custom Mario action, active when the player is idle and in machinima mode.
-To-do: Cycle animations via the mixtape */
-void saturn_action_idle(struct MarioState *m) {
-    // Unholy idle animation decider
-    CharacterAnimID idle_anim = m->action & ACT_FLAG_SWIMMING ? CHAR_ANIM_WATER_IDLE : 
-    (m->heldObj == NULL) ? CHAR_ANIM_FIRST_PERSON : CHAR_ANIM_IDLE_WITH_LIGHT_OBJ;
+CharacterAnimID get_idle_anim(struct MarioState *m) {
+    if (m->prevAction != ACT_IDLE) {
+        m->actionState = 2;
+        m->prevAction = ACT_IDLE;
+    }
 
-    if (!(enable_custom_anim && override_anim)) force_set_character_animation(m, (override_anim) ? selected_anim_index : idle_anim);
+    if (m->action & ACT_FLAG_SWIMMING) return CHAR_ANIM_WATER_IDLE;
+    if (m->heldObj != NULL) return CHAR_ANIM_IDLE_WITH_LIGHT_OBJ;
+    else {
+        if (!enable_head_rotation) return CHAR_ANIM_FIRST_PERSON;
+        if (is_anim_at_end(m)) {
+            if (m->actionState < 2) m->actionState++;
+            else m->actionState = 0;
+        }
+        switch (m->actionState) {
+            case 0: return CHAR_ANIM_IDLE_HEAD_LEFT; break;
+            case 1: return CHAR_ANIM_IDLE_HEAD_RIGHT; break;
+            case 2: return CHAR_ANIM_IDLE_HEAD_CENTER; break;
+            default: return CHAR_ANIM_FIRST_PERSON; break;
+        }
+    }
+}
+
+/* Custom Mario action, active when the player is idle and in machinima mode. */
+void saturn_action_idle(struct MarioState *m) {
+
+    if (!(enable_custom_anim && override_anim)) force_set_character_animation(m, (override_anim) ? selected_anim_index : get_idle_anim(m));
     if (m->marioObj == NULL) return;
 
     struct Animation *targetAnim = m->marioObj->header.gfx.animInfo.curAnim;

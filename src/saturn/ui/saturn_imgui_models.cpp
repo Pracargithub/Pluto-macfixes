@@ -328,8 +328,6 @@ void OpenSwitchOptions() {
         switch_state_cap = 0;
         switch_state_powerup = 0;
         vanish_transparency = 128;
-        enable_head_rotation = false;
-        enable_torso_rotation = true;
     }
     ImGui::Separator();
 
@@ -339,9 +337,7 @@ void OpenSwitchOptions() {
     SwitchOption("Cap###cap_state", &switch_state_cap, cap_switches, IM_ARRAYSIZE(cap_switches));
 
     ImGui::Separator();
-    ImGui::BeginDisabled(!freeze_camera);
     ImGui::Checkbox("Head Rotations", &enable_head_rotation);
-    ImGui::EndDisabled();
     ImGui::Checkbox("Torso Rotations", &enable_torso_rotation);
 
     ImGui::Separator();

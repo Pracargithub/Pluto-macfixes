@@ -376,7 +376,7 @@ static s32 act_water_idle(struct MarioState *m) {
         val = 0x30000;
     }
 
-    if (freeze_camera && !enable_head_rotation && override_anim)
+    if (freeze_camera && override_anim)
         saturn_action_idle(m);
     else
         common_idle_step(m, CHAR_ANIM_WATER_IDLE, val);

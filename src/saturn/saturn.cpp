@@ -22,6 +22,8 @@ extern "C" {
 
 bool freeze_camera;
 float freeze_camera_speed = 1.f;
+float camera_follow_speed = 1.f;
+
 bool enable_hud;
 bool enable_torso_rotation = true;
 int head_rotation[2] = { 0, 0 };
@@ -64,11 +66,6 @@ extern struct Animation *gCurAnim;
 
 /* "Machinima Camera", an extended freeze camera function that allows for free/fly camera and C-Up. */
 int saturn_camera_update() {
-    if (gLakituState.posHSpeed > 0) gLakituState.posHSpeed = 0.3f;
-    if (gLakituState.posVSpeed > 0) gLakituState.posVSpeed = 0.3f;
-    if (gLakituState.focHSpeed > 0) gLakituState.focHSpeed = 0.8f;
-    if (gLakituState.focVSpeed > 0) gLakituState.focVSpeed = 0.3f;
-
     if (freeze_camera) {
         fade_volume_scale(SEQ_PLAYER_LEVEL, 0, 6);
 
@@ -144,7 +141,14 @@ int saturn_camera_update() {
         }
 
         return CAM_FROZEN;
-    } else fade_volume_scale(SEQ_PLAYER_LEVEL, 255, 60);
+    } else {
+        fade_volume_scale(SEQ_PLAYER_LEVEL, 255, 60);
+
+        if (gLakituState.posHSpeed > 0) gLakituState.posHSpeed = 0.3f * camera_follow_speed;
+        if (gLakituState.posVSpeed > 0) gLakituState.posVSpeed = 0.3f * camera_follow_speed;
+        if (gLakituState.focHSpeed > 0) gLakituState.focHSpeed = 0.8f * camera_follow_speed;
+        if (gLakituState.focVSpeed > 0) gLakituState.focVSpeed = 0.3f * camera_follow_speed;
+    }
 
     return CAM_NORMAL;
 }

@@ -17,6 +17,7 @@ extern "C" {
     extern bool freeze_camera;
     extern float freeze_camera_speed;
     int saturn_camera_update();
+    extern float camera_follow_speed;
 
     extern bool enable_hud;
     extern bool enable_torso_rotation;

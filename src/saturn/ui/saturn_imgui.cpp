@@ -277,6 +277,14 @@ void imgui_update() {
                 if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
                     freeze_camera_speed = 1.f;
                 ImGui::EndDisabled();
+                ImGui::Separator();
+
+                ImGui::SliderFloat("###camera_follow_speed", &camera_follow_speed, 0.01f, 1.f, "Follow %.2f");
+                if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+                    camera_follow_speed = 1.f;
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Rule of Thirds", NULL, show_rule_of_thirds)) show_rule_of_thirds = !show_rule_of_thirds;
                 ImGui::SliderInt("###camera_fov", (int*)&configPlutoCameraFov, 0, 100, "FOV %d");
                 if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
                     configPlutoCameraFov = 45;

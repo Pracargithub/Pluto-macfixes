@@ -2,6 +2,7 @@
 
 #include <string>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -46,11 +47,12 @@ FileBrowserEntry root = FileBrowserEntry("root", true, nullptr);
 FileBrowserEntry* curr = &root;
 int browser_height = 150;
 std::filesystem::path selected_path;
-std::string extension_filter = "";
+std::vector<std::string> extension_filters = {};
 std::map<std::string, char*> search_terms = {};
 std::map<std::string, std::string> selected_paths = {};
 std::map<std::filesystem::path, FileBrowserEntry*> scanned_paths = {};
 std::filesystem::path last_scanned_path;
+std::function<void(std::string)> drag_callback = nullptr;
 
 void saturn_file_browser_item(std::string item) {
     curr->add_file(item);
@@ -76,7 +78,11 @@ void saturn_file_browser_scan_directory_internal(std::filesystem::path dir, bool
         }
         std::string ext = path.extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        if (extension_filter != "" && ext != ("." + extension_filter)) continue;
+        if (!extension_filters.empty()) {
+            bool matched = false;
+            for (const auto& f : extension_filters) if (ext == "." + f) { matched = true; break; }
+            if (!matched) continue;
+        }
         files.push_back(path.filename().string());
     }
     auto stringcomp = [](std::string a, std::string b) {
@@ -114,18 +120,23 @@ void saturn_file_browser_rescan_directory(std::filesystem::path dir, bool recurs
 }
 
 void saturn_file_browser_filter_extension(std::string extension) {
-    extension_filter = std::string(extension);
-    std::transform(extension_filter.begin(), extension_filter.end(), extension_filter.begin(), ::tolower);
+    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    extension_filters.push_back(extension);
 }
 
 void saturn_file_browser_height(int height) {
     browser_height = height;
 }
 
+void saturn_file_browser_set_drag_callback(std::function<void(std::string)> callback) {
+    drag_callback = callback;
+}
+
 void saturn_file_browser_clear() {
     root.clear();
     browser_height = 150;
-    extension_filter = "";
+    extension_filters.clear();
+    drag_callback = nullptr;
 }
 
 std::map<std::string, bool> was_searching = {};
@@ -190,6 +201,10 @@ bool saturn_file_browser_create_imgui(FileBrowserEntry dir, std::string path, st
                     selected_path = selected_paths[browser_id] = fullpath;
                     clicked = true;
                 }
+                if (drag_callback && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                    drag_callback(fullpath);
+                    ImGui::EndDragDropSource();
+                }
             }
         }
     }
@@ -208,7 +223,6 @@ void saturn_file_browser_tools(std::string id, bool search, int exp_index) {
         }
         if (id == "eyes") {
             current_expressions[exp_index].Refresh();
-            UpdateEditorLabels();
         }
     }
     if (search) {
@@ -222,8 +236,8 @@ void saturn_file_browser_tools(std::string id, bool search, int exp_index) {
 bool saturn_file_browser_show(std::string id, int exp_index) {
     if (id == "eyes") {
         if (custom_eyes) {
-            if (current_expressions[exp_index].Textures.size() <= 0) return false;
-            if (current_expressions[exp_index].Textures[current_expressions[exp_index].CurrentIndex].RawData == 0) return false;
+            if (current_expressions[exp_index].Textures.size() <= 0) { saturn_file_browser_clear(); return false; }
+            if (current_expressions[exp_index].Textures[current_expressions[exp_index].CurrentIndex].RawData == 0) { saturn_file_browser_clear(); return false; }
         }
     }
 

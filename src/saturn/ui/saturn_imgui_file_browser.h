@@ -3,6 +3,13 @@
 
 #include <string>
 #include <filesystem>
+#pragma push_macro("max")
+#pragma push_macro("min")
+#undef max
+#undef min
+#include <functional>
+#pragma pop_macro("min")
+#pragma pop_macro("max")
 
 void saturn_file_browser_item(std::string item);
 void saturn_file_browser_tree_node(std::string name);
@@ -10,6 +17,7 @@ void saturn_file_browser_tree_node_end();
 void saturn_file_browser_scan_directory(std::filesystem::path path, bool recursive = true);
 void saturn_file_browser_rescan_directory(std::filesystem::path path, bool recursive = true);
 void saturn_file_browser_filter_extension(std::string extension);
+void saturn_file_browser_set_drag_callback(std::function<void(std::string)> callback);
 void saturn_file_browser_height(int height);
 bool saturn_file_browser_show(std::string id, int exp_index);
 bool saturn_file_browser_show_tree(std::string id, int exp_index);

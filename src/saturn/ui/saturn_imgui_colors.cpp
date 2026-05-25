@@ -285,49 +285,26 @@ void SaveActiveColorCode(std::string save_path) {
 }
 
 void OpenCCSelector() {
-    ImGui::BeginChild("###menu_cc_selector", ImVec2(150, 100), ImGuiChildFlags_Border);
-    for (int n = 0; n < color_code_list.size(); n++) {
-        const bool is_selected = (uiCcListId == n + 1);
-        std::string label_name = color_code_list[n].substr(0, color_code_list[n].find_last_of('.')) + "###cc_list_" + std::to_string(n);;
-        if (ImGui::Selectable(label_name.c_str(), is_selected)) {
-            uiCcListId = n + 1;
-
-            // Overwrite current color code
-            current_color_code = LoadGSFile(color_code_list[n], std::string(sys_user_path()).append("/dynos/colorcodes"));
-            PasteGameShark(current_color_code.GameShark, false);
-            UpdateEditorFromPalette();
-            UpdatePaletteFromEditor(0);
-            send_palette_to_network();
-        }
-        if (ImGui::BeginPopupContextItem()) {
-            if (label_name != "Mario") {
-                ImGui::TextDisabled("#%i", n); ImGui::SameLine();
-                ImGui::Text(color_code_list[n].c_str());
-                ImGui::TextDisabled(("dynos/colorcodes/" + color_code_list[n]).c_str());
-            }
-            if (ImGui::Button("Copy GS to Clipboard")) {
-                ImGui::LogToClipboard();
-                ColorCode paste = LoadGSFile(color_code_list[n], std::string(sys_user_path()).append("/dynos/colorcodes"));
-                ImGui::LogText(paste.GameShark.c_str());
-                ImGui::LogFinish();
-            }
-            ImGui::Separator();
-            ImGui::TextDisabled("%i color code(s)", color_code_list.size());
-            if (ImGui::Button("Refresh")) {
-                RefreshColorCodeList();
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            ColorCode dragging = LoadGSFile(color_code_list[n], std::string(sys_user_path()).append("/dynos/colorcodes"));
-            dragging.IsModel = false;
-            ImGui::SetDragDropPayload("COLORCODE", &dragging, sizeof(ColorCode));
-            ImGui::Text(dragging.Name.c_str());
-            ImGui::EndDragDropSource();
-        }
+    saturn_file_browser_item("Mario.gs");
+    saturn_file_browser_filter_extension("gs");
+    saturn_file_browser_filter_extension("txt");
+    saturn_file_browser_scan_directory(std::string(sys_user_path()).append("/dynos/colorcodes"));
+    std::string cc_base = std::string(sys_user_path()).append("/dynos/colorcodes");
+    saturn_file_browser_set_drag_callback([cc_base](std::string path) {
+        ColorCode dragging = LoadGSFile(path, cc_base);
+        dragging.IsModel = false;
+        ImGui::SetDragDropPayload("COLORCODE", &dragging, sizeof(ColorCode));
+        ImGui::Text("%s", dragging.Name.c_str());
+    });
+    saturn_file_browser_height(150);
+    if (saturn_file_browser_show("colorcodes", -1)) {
+        std::string selected = saturn_file_browser_get_selected().generic_string();
+        current_color_code = LoadGSFile(selected, std::string(sys_user_path()).append("/dynos/colorcodes"));
+        PasteGameShark(current_color_code.GameShark, false);
+        UpdateEditorFromPalette();
+        UpdatePaletteFromEditor(0);
+        send_palette_to_network();
     }
-    ImGui::EndChild();
 }
 
 void OpenCCEditor() {

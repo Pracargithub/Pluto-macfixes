@@ -226,58 +226,42 @@ void OpenModelExpressionSelector(PackData* pack) {
     }
 }
 
-void OpenModelCCSelector(PackData* pack, std::vector<std::string> cc_list) {
+void OpenModelCCSelector(PackData* pack) {
     if (!IsSaturnModel(pack->mIndex) || active_saturn_model_index == -1) return;
 
-    ImGui::BeginChild("###menu_model_cc_selector", ImVec2(200, 100), ImGuiChildFlags_Border);
-    for (int n = 0; n < cc_list.size(); n++) {
-        const bool is_selected = (uiCcListId == ((n + 1) * -1) && pack->mIndex == active_saturn_model_index);
-        std::string label_name = cc_list[n].substr(0, cc_list[n].find_last_of('.')) + "###mcc_list_" + std::to_string(n);
-        if (ImGui::Selectable(label_name.c_str(), is_selected)) {
-            if (pack->mIndex == active_saturn_model_index) uiCcListId = (n + 1) * -1;
-            else uiCcListId = 0;
+    bool has_default = std::filesystem::exists(pack->mPath + "/default.gs");
+    bool has_colorcodes = std::filesystem::is_directory(pack->mPath + "/colorcodes");
+    if (!has_default && !has_colorcodes) return;
 
-            // Overwrite current color code
-            current_color_code = LoadGSFile(cc_list[n], pack->mPath + "/colorcodes");
-            PasteGameShark(current_color_code.GameShark, false);
-            UpdateEditorFromPalette();
-            UpdatePaletteFromEditor(0);
-            send_palette_to_network();
-        }
-        if (ImGui::BeginPopupContextItem()) {
-            if (label_name != "../default") {
-                ImGui::TextDisabled("#%i", n); ImGui::SameLine();
-                ImGui::Text(cc_list[n].c_str());
-                ImGui::TextDisabled(((std::string)pack->mDisplayName.begin() + "/colorcodes/" + cc_list[n]).c_str());
-            }
-            if (ImGui::Button("Copy GS to Clipboard")) {
-                ImGui::LogToClipboard();
-                ColorCode paste = LoadGSFile(cc_list[n], pack->mPath + "/colorcodes");
-                ImGui::LogText(paste.GameShark.c_str());
-                ImGui::LogFinish();
-            }
-            ImGui::Separator();
-            ImGui::TextDisabled("%i color code(s)", cc_list.size());
-            if (ImGui::Button("Refresh")) {
-                UpdateEditorLabels();
-                format_warning_dismissed = false;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            ColorCode dragging = LoadGSFile(cc_list[n], pack->mPath + "/colorcodes");
-            ImGui::SetDragDropPayload("COLORCODE", &dragging, sizeof(ColorCode));
-            ImGui::Text("%s (%s)", pack->mDisplayName, dragging.Name.c_str());
-            ImGui::EndDragDropSource();
-        }
+    if (has_default)
+        saturn_file_browser_item("../default.gs");
+    saturn_file_browser_filter_extension("gs");
+    saturn_file_browser_filter_extension("txt");
+    if (has_colorcodes)
+        saturn_file_browser_scan_directory(pack->mPath + "/colorcodes");
+    saturn_file_browser_height(100);
+    std::string cc_base = pack->mPath + "/colorcodes";
+    saturn_file_browser_set_drag_callback([cc_base](std::string path) {
+        ColorCode dragging = LoadGSFile(path, cc_base);
+        dragging.IsModel = false;
+        ImGui::SetDragDropPayload("COLORCODE", &dragging, sizeof(ColorCode));
+        ImGui::Text("%s", dragging.Name.c_str());
+    });
+    std::string browser_id = "modelcc_" + std::to_string(pack->mIndex);
+    if (saturn_file_browser_show(browser_id, -1)) {
+        std::string selected = saturn_file_browser_get_selected().generic_string();
+        if (pack->mIndex == active_saturn_model_index) uiCcListId = -1;
+        else uiCcListId = 0;
+        current_color_code = LoadGSFile(selected, pack->mPath + "/colorcodes");
+        PasteGameShark(current_color_code.GameShark, false);
+        UpdateEditorFromPalette();
+        UpdatePaletteFromEditor(0);
+        send_palette_to_network();
     }
-    ImGui::EndChild();
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SAVE_COLORCODE")) {
             ColorCode dragged = *(const ColorCode*)payload->Data;
             SaveActiveColorCode(pack->mPath + "/colorcodes");
-
             current_expressions.clear();
             add_to_model_queue(pack->mIndex, pack->mEnabled, false);
         }
@@ -506,8 +490,7 @@ void OpenModelSettings() {
         }
 
         // Model Color Codes
-        if (model_color_code_list.size() > 0)
-            OpenModelCCSelector(pack, model_color_code_list);
+        OpenModelCCSelector(pack);
 
         // Expressions
         OpenModelExpressionSelector(pack);
@@ -540,7 +523,6 @@ void OpenModelSettingsAtCursor() {
     show_window_model_settings = true;
 }
 
-std::vector<std::string> popup_color_code_list;
 static char model_search_term[256] = "";
 
 std::vector<std::pair<PackData*, bool>> model_packs;
@@ -634,13 +616,10 @@ void OpenModelSelector() {
             std::string popup_id = "###model_pack_popup_" + std::to_string(i);
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
                 ImGui::OpenPopup(popup_id.c_str());
-                popup_color_code_list.clear();
-                popup_color_code_list = GetColorCodeList(pack->mPath + "/colorcodes");
             }
             if (ImGui::BeginPopup(popup_id.c_str())) {
                 ImGui::Text(pack->mDisplayName.begin());
-                if (popup_color_code_list.size() > 0)
-                    OpenModelCCSelector(pack, popup_color_code_list);
+                OpenModelCCSelector(pack);
                 
                 OpenModelExpressionSelector(pack);
                 ImGui::EndPopup();

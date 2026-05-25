@@ -234,7 +234,8 @@ void imgui_update() {
                     std::string window_name = std::string(gNetworkPlayers[i].name) + "###player_window_" + std::to_string(i);
                     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoFocusOnAppearing |
                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus;
+                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus |
+                        ImGuiWindowFlags_NoMouseInputs;
                     // Remove title bar if only one player is connected
                     if (network_player_connected_count() <= 1)
                         window_flags |= ImGuiWindowFlags_NoTitleBar;
@@ -247,8 +248,13 @@ void imgui_update() {
                 // WIP: Currently only works for player 1
                 if (player_windows[0].active && player_windows[0].hovered &&
                 AnyModelsEnabled() && active_saturn_model_index != -1) {
-                    if ((ImGui::IsMouseReleased(1)) && !ImGui::IsAnyItemHovered() && !saturn_any_bone_dot_hovered && !ImGui::GetIO().WantCaptureMouse)
-                        OpenModelSettingsAtCursor();
+                    if (!show_window_model_settings && !saturn_any_bone_dot_hovered && !ImGui::IsAnyItemHovered() && !ImGui::GetIO().WantCaptureMouse) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("Right-click to open model settings");
+                        ImGui::EndTooltip();
+                        if (ImGui::IsMouseReleased(1))
+                            OpenModelSettingsAtCursor();
+                    }
                 }
             }
         }
@@ -432,6 +438,7 @@ void imgui_update() {
 
         // Timeline
         if (show_window_timeline) {
+            ImGui::SetNextWindowSizeConstraints(ImVec2(300.0f, 150.0f), ImVec2(FLT_MAX, FLT_MAX));
             ImGui::Begin("Timeline", &show_window_timeline);
             RenderTimelineWidget();
             ImGui::End();

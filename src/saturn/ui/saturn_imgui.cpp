@@ -28,6 +28,8 @@ bool is_wayland() {
 #include <stdio.h>
 #include <time.h>
 
+#include <algorithm>
+
 #include <stb/stb_image_write.h>
 
 #include "saturn/saturn_keyframe.h"
@@ -36,6 +38,7 @@ bool is_wayland() {
 #include "saturn/ui/saturn_imgui_world.h"
 #include "saturn/ui/saturn_imgui_animations.h"
 #include "saturn/libs/imgui/imgui.h"
+#include "saturn/libs/imgui/imgui_stdlib.h"
 #include "saturn/libs/imgui/imgui_internal.h"
 #include "saturn/libs/imgui/imgui_impl_sdl.h"
 #include "saturn/libs/imgui/imgui_impl_opengl3.h"
@@ -67,7 +70,6 @@ extern "C" {
 #include "data/dynos.cpp.h"
 
 SDL_Window* current_window = nullptr;
-ImGuiIO io;
 
 bool show_menu;
 bool show_window_machinima = true;
@@ -95,6 +97,14 @@ ALIGNED8 const u8 rule_of_thirds[] = {
 };
 GLuint rot_texture;
 
+struct CameraSaveState {
+    int id;
+    std::string name;
+    Vec3f pos;
+    Vec3f foc;
+};
+std::vector<CameraSaveState> saved_camera_positions;
+
 void imgui_init() {
     // Create directories for Pluto content
     // These are located at %appdata%/Llennpie/Pluto on Windows, and ~/.local/share/Llennpie/Pluto on Linux
@@ -111,7 +121,7 @@ void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
     const char* glsl_version = "#version 120";
     ImGuiContext* imgui = ImGui::CreateContext();
     ImGui::SetCurrentContext(imgui);
-    io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
 
     io.WantSetMousePos = false;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
@@ -279,6 +289,50 @@ void imgui_update() {
                 if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
                     freeze_camera_speed = 1.f;
                 ImGui::EndDisabled();
+
+                if (ImGui::BeginMenu("Camera Position")) {
+                    if (ImGui::MenuItem("Save Current")) {
+                        static int counter = 1;
+                        saved_camera_positions.push_back({ counter, "Unnamed Camera " + std::to_string(counter),
+                            gCamera->pos[0], gCamera->pos[1], gCamera->pos[2],
+                            gCamera->focus[0], gCamera->focus[1], gCamera->focus[2]
+                        });
+                        counter++;
+                    }
+                    if (ImGui::MenuItem("Remove All")) saved_camera_positions.clear();
+                    if (!saved_camera_positions.empty()) ImGui::Separator();
+                    saved_camera_positions.erase(std::remove_if(
+                        saved_camera_positions.begin(), saved_camera_positions.end(),
+                        [](CameraSaveState& cam) {
+                            std::string delete_id = "X##camdel_" + std::to_string(cam.id);
+                            std::string restore_id = ">##camres_" + std::to_string(cam.id);
+                            std::string name_id = "##camname_" + std::to_string(cam.id);
+    
+                            if (ImGui::Button(delete_id.c_str())) return true;
+                            if (ImGui::IsItemHovered()) {
+                                ImGui::BeginTooltip();
+                                ImGui::Text("Remove");
+                                ImGui::EndTooltip();
+                            }
+                            ImGui::SameLine();
+                            if (ImGui::Button(restore_id.c_str())) {
+                                vec3f_copy(gLakituState.goalPos, cam.pos);
+                                vec3f_copy(gLakituState.goalFocus, cam.foc);
+                            }
+                            if (ImGui::IsItemHovered()) {
+                                ImGui::BeginTooltip();
+                                ImGui::Text("Restore");
+                                ImGui::EndTooltip();
+                            }
+                            ImGui::SameLine();
+                            ImGui::InputText(name_id.c_str(), &cam.name);
+
+                            return false;
+                        }
+                    ), saved_camera_positions.end());
+                    ImGui::EndMenu();
+                }
+                
                 ImGui::Separator();
 
                 ImGui::SliderFloat("###camera_follow_speed", &camera_follow_speed, 0.01f, 1.f, "Follow %.2f");

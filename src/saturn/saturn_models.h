@@ -52,8 +52,6 @@ extern "C" {
     extern void LoadModelData(int, bool, bool, bool);
     extern void LoadAccessories();
     extern void RefreshActiveExpressions();
-    extern bool refreshEditorPalette;
-    extern int refreshCounter;
     extern int active_accessory_index;
     extern int hat_pos[3];
     extern int hat_rot[3];

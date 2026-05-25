@@ -63,9 +63,6 @@ ImVec4 uiThighShadeColor =       ImVec4(127.0f / 255.0f, 0.0f / 255.0f, 64.0f / 
 ImVec4 uiCalfMainColor =         ImVec4(127.0f / 255.0f, 0.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f);
 ImVec4 uiCalfShadeColor =        ImVec4(64.0f / 255.0f, 0.0f / 255.0f, 127.0f / 255.0f, 255.0f / 255.0f);
 
-bool refreshEditorPalette;
-int refreshCounter = 0;
-
 std::vector<int> accessory_packs;
 int active_accessory_index = -1;
 

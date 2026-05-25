@@ -831,21 +831,21 @@ static void OPTIMIZE_O3 gfx_sp_vertex(size_t n_vertices, size_t dest_index, cons
             int b = rsp.current_lights[rsp.current_num_lights - 1].col[2];
 
             if (gCurrentObject != NULL && gMarioStates[0].marioBodyState != NULL) {
-                cc_mario_cap = (r == 0x7f && g == 0x00 && b == 0x00) | (r == 0x7E && g == 0x00 && b == 0x00);
-                cc_mario_overalls = (r == 0x00 && g == 0x00 && b == 0x7f) | (r == 0x00 && g == 0x00 && b == 0x7E);
-                cc_mario_gloves = (r == 0x00 && g == 0x7f && b == 0x00) | (r == 0x00 && g == 0x7E && b == 0x00);                                          // pain
-                cc_mario_shoes = (r == 0x39 && g == 0x0e && b == 0x07) | (r == 0x39 && g == 0xD && b == 0x07) | (r == 0x38 && g == 0xD && b == 0x07) | (r == 0x38 && g == 0x0d && b == 0x06);
-                cc_mario_skin = (r == 0x7f && g == 0x60 && b == 0x3c) | (r == 0x7E && g == 0x60 && b == 0x3C);
-                cc_mario_hair = (r == 0x39 && g == 0x03 && b == 0x00) | (r == 0x39 && g == 0x2 && b == 0x00);
+                cc_mario_cap = ((r == 0x7f && g == 0x00 && b == 0x00) | (r == 0x7E && g == 0x00 && b == 0x00)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_overalls = ((r == 0x00 && g == 0x00 && b == 0x7f) | (r == 0x00 && g == 0x00 && b == 0x7E)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_gloves = ((r == 0x00 && g == 0x7f && b == 0x00) | (r == 0x00 && g == 0x7E && b == 0x00)) && gCurrentObject == gMarioStates[0].marioObj;                                          // pain
+                cc_mario_shoes = ((r == 0x39 && g == 0x0e && b == 0x07) | (r == 0x39 && g == 0xD && b == 0x07) | (r == 0x38 && g == 0xD && b == 0x07) | (r == 0x38 && g == 0x0d && b == 0x06)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_skin = ((r == 0x7f && g == 0x60 && b == 0x3c) | (r == 0x7E && g == 0x60 && b == 0x3C)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_hair = ((r == 0x39 && g == 0x03 && b == 0x00) | (r == 0x39 && g == 0x2 && b == 0x00)) && gCurrentObject == gMarioStates[0].marioObj;
                 // SPARK
-                cc_mario_shirt = (r == 0x7f && g == 0x7f && b == 0x00) | (r == 0x7E && g == 0x7E && b == 0x00);
-                cc_mario_shoulders = (r == 0x00 && g == 0x7f && b == 0x7f) | (r == 0x00 && g == 0x7E && b == 0x7E);
-                cc_mario_arms = (r == 0x00 && g == 0x7f && b == 0x40) | (r == 0x00 && g == 0x7F && b == 0x3F);
-                cc_mario_pelvis = (r == 0x7f && g == 0x00 && b == 0x7f) | (r == 0x7E && g == 0x00 && b == 0x7E);
-                cc_mario_thigh = (r == 0x7f && g == 0x00 && b == 0x40) | (r == 0x7F && g == 0x00 && b == 0x3F);
-                cc_mario_calf = (r == 0x40 && g == 0x00 && b == 0x7f) | (r == 0x3F && g == 0x00 && b == 0x7F);
+                cc_mario_shirt = ((r == 0x7f && g == 0x7f && b == 0x00) | (r == 0x7E && g == 0x7E && b == 0x00)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_shoulders = ((r == 0x00 && g == 0x7f && b == 0x7f) | (r == 0x00 && g == 0x7E && b == 0x7E)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_arms = ((r == 0x00 && g == 0x7f && b == 0x40) | (r == 0x00 && g == 0x7F && b == 0x3F)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_pelvis = ((r == 0x7f && g == 0x00 && b == 0x7f) | (r == 0x7E && g == 0x00 && b == 0x7E)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_thigh = ((r == 0x7f && g == 0x00 && b == 0x40) | (r == 0x7F && g == 0x00 && b == 0x3F)) && gCurrentObject == gMarioStates[0].marioObj;
+                cc_mario_calf = ((r == 0x40 && g == 0x00 && b == 0x7f) | (r == 0x3F && g == 0x00 && b == 0x7F)) && gCurrentObject == gMarioStates[0].marioObj;
                 // Extras
-                cc_creator_sideburn = (r == 0x73 && g == 0x6 && b == 0x0) | (r == 0x73 && g == 0x5 && b == 0x0);
+                cc_creator_sideburn = ((r == 0x73 && g == 0x6 && b == 0x0) | (r == 0x73 && g == 0x5 && b == 0x0)) && gCurrentObject == gMarioStates[0].marioObj;
 
                 if (cc_mario_cap) {
                     show_cap = true;
@@ -2053,6 +2053,7 @@ static void OPTIMIZE_O3 gfx_run_dl(Gfx* cmd) {
 static void gfx_sp_reset(void) {
     rsp.modelview_matrix_stack_size = 1;
     rsp.current_num_lights = 2;
+    memset(rsp.current_lights, 0, sizeof(rsp.current_lights));
     rsp.lights_changed = true;
 }
 

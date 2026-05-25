@@ -279,7 +279,6 @@ void OpenModelCCSelector(PackData* pack, std::vector<std::string> cc_list) {
             SaveActiveColorCode(pack->mPath + "/colorcodes");
 
             current_expressions.clear();
-            UpdateEditorLabels();
             add_to_model_queue(pack->mIndex, pack->mEnabled, false);
         }
         ImGui::EndDragDropTarget();
@@ -442,7 +441,6 @@ void OpenAccessorySettings() {
                 if (ImGui::Selectable(pack_id.c_str(), &pack->mEnabled)) {
                     // Toggle model
                     add_to_model_queue(accessory_packs[i], pack->mEnabled, false);
-                    UpdateEditorLabels();
                 }
                 ImGui::EndDisabled();
 
@@ -468,7 +466,6 @@ void OpenModelSettings() {
             if (ImGui::BeginMenu("Model")) {
                 if (ImGui::MenuItem("Refresh")) {
                     current_expressions.clear();
-                    UpdateEditorLabels();
                     add_to_model_queue(active_saturn_model_index, pack->mEnabled, false);
                 }
                 ImGui::BeginDisabled(accessory_packs.size() <= 0);
@@ -625,7 +622,6 @@ void OpenModelSelector() {
                     format_warning_dismissed = false;
                 }
                 add_to_model_queue(i, pack->mEnabled, false);
-                if (IsSaturnModel(i)) UpdateEditorLabels();
                 if (active_saturn_model_index == -1) custom_eyes = false;
             }
             if (pack->mModelAuthor != "" && pack->mEnabled) {

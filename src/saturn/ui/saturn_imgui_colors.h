@@ -15,7 +15,6 @@ extern "C" {
     void UpdatePaletteFromEditor(int);
     void RefreshColorCodeList();
     void OpenCCEditor();
-    void UpdateEditorLabels();
 #ifdef __cplusplus
 }
 #endif

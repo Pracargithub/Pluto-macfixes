@@ -409,8 +409,3 @@ void OpenCCEditor() {
         value_changed = false;
     }
 }
-
-void UpdateEditorLabels() {
-    refreshCounter = 0;
-    refreshEditorPalette = true;
-}

@@ -159,16 +159,17 @@ int saturn_camera_update() {
 }
 
 CharacterAnimID get_idle_anim(struct MarioState *m) {
-    if (m->prevAction != ACT_IDLE) {
-        m->actionState = 2;
+    bool just_entered = (m->prevAction != ACT_IDLE);
+    if (just_entered) {
+        m->actionState = 0;
         m->prevAction = ACT_IDLE;
     }
 
     if (m->action & ACT_FLAG_SWIMMING) return CHAR_ANIM_WATER_IDLE;
     if (m->heldObj != NULL) return CHAR_ANIM_IDLE_WITH_LIGHT_OBJ;
     else {
-        if (!enable_head_rotation) return CHAR_ANIM_FIRST_PERSON;
-        if (is_anim_at_end(m)) {
+        if (!enable_head_rotation || m->action == ACT_FIRST_PERSON) return CHAR_ANIM_FIRST_PERSON;
+        if (!just_entered && is_anim_at_end(m)) {
             if (m->actionState < 2) m->actionState++;
             else m->actionState = 0;
         }

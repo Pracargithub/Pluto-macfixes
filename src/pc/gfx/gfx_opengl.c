@@ -746,8 +746,8 @@ static void gfx_opengl_start_frame(void) {
     bool should_capture = configWindow.secret_ui || (capture_screenshot && (skybox_has_deinit || !auto_chroma));
     if (should_capture) {
         if (capture_screenshot) {
-            gfx_current_dimensions.width  = screenshot_custom_res ? screenshot_size[0] : gfx_current_dimensions.width * screenshot_multiplier;
-            gfx_current_dimensions.height = screenshot_custom_res ? screenshot_size[1] : gfx_current_dimensions.height * screenshot_multiplier;
+            gfx_current_dimensions.width  = screenshot_custom_res ? (uint32_t)screenshot_size[0] : gfx_current_dimensions.width * screenshot_multiplier;
+            gfx_current_dimensions.height = screenshot_custom_res ? (uint32_t)screenshot_size[1] : gfx_current_dimensions.height * screenshot_multiplier;
         }
         create_framebuffer(configWindow.msaa == 4);
     }

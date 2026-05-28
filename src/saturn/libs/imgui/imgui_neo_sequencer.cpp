@@ -1359,16 +1359,16 @@ ImGuiNeoSequencerStyle::ImGuiNeoSequencerStyle()
     Colors[ImGuiNeoSequencerCol_TimelinesBg] = Colors[ImGuiNeoSequencerCol_TopBarBg];
     Colors[ImGuiNeoSequencerCol_TimelineBorder] = Colors[ImGuiNeoSequencerCol_Bg] * ImVec4{0.5f, 0.5f, 0.5f, 1.0f};
 
-    Colors[ImGuiNeoSequencerCol_FramePointer] = ImVec4{0.98f, 0.24f, 0.24f, 0.50f};
-    Colors[ImGuiNeoSequencerCol_FramePointerHovered] = ImVec4{0.98f, 0.15f, 0.15f, 1.00f};
-    Colors[ImGuiNeoSequencerCol_FramePointerPressed] = ImVec4{0.98f, 0.08f, 0.08f, 1.00f};
+    Colors[ImGuiNeoSequencerCol_FramePointer] = ImVec4{0.56/255.f, 0xFF/255.f, 0xBB/255.f, 0.5f};
+    Colors[ImGuiNeoSequencerCol_FramePointerHovered] = ImVec4{0.56/255.f, 0xFF/255.f, 0xBB/255.f, 1.f};
+    Colors[ImGuiNeoSequencerCol_FramePointerPressed] = ImVec4{0.56/255.f, 0xFF/255.f, 0xBB/255.f, 1.f};
 
     Colors[ImGuiNeoSequencerCol_Keyframe] = ImVec4{0.59f, 0.59f, 0.59f, 0.50f};
-    Colors[ImGuiNeoSequencerCol_KeyframeHovered] = ImVec4{0.98f, 0.39f, 0.36f, 1.00f};
-    Colors[ImGuiNeoSequencerCol_KeyframePressed] = ImVec4{0.98f, 0.39f, 0.36f, 1.00f};
-    Colors[ImGuiNeoSequencerCol_KeyframeSelected] = ImVec4{0.32f, 0.23f, 0.98f, 1.00f};
+    Colors[ImGuiNeoSequencerCol_KeyframeHovered] = ImVec4{0.78f, 0.78f, 0.78f, 1.00f};
+    Colors[ImGuiNeoSequencerCol_KeyframePressed] = ImVec4{0.78f, 0.78f, 0.78f, 1.00f};
+    Colors[ImGuiNeoSequencerCol_KeyframeSelected] = ImVec4{1.f, 1.f, 0.f, 1.00f};
 
-    Colors[ImGuiNeoSequencerCol_FramePointerLine] = ImVec4{0.98f, 0.98f, 0.98f, 0.8f};
+    Colors[ImGuiNeoSequencerCol_FramePointerLine] = ImVec4{1.f, 1.f, 1.f, 0.8f};
 
     Colors[ImGuiNeoSequencerCol_ZoomBarBg] = ImVec4{0.59f, 0.59f, 0.59f, 0.90f};
     Colors[ImGuiNeoSequencerCol_ZoomBarSlider] = ImVec4{0.8f, 0.8f, 0.8f, 0.60f};

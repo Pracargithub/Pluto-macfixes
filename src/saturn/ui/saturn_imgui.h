@@ -22,6 +22,7 @@ extern "C" {
     extern bool show_menu;
     extern bool show_window_model_settings;
     extern bool show_window_animations;
+    extern bool show_window_timeline;
     
     extern bool capture_screenshot;
     extern int screenshot_size[2];

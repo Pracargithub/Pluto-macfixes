@@ -8,12 +8,13 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include "include/types.h"
 
 using Interpolate = std::function<void(void*, void*, void*, float)>;
 using Compare = std::function<bool(void*, void*)>;
 using OnHover = std::function<void(void*)>;
 
-enum InterpolationType {
+enum class InterpolationType {
     In, Out, InOut, Unknown
 };
 
@@ -26,6 +27,7 @@ public:
     int position = 0;
     float interp_power = 1;
     InterpolationType interp_type = InterpolationType::InOut;
+    bool pause_playback = false;
 
     Keyframe() {}
     ~Keyframe() { free(data); }
@@ -97,6 +99,8 @@ struct Timeline {
 extern std::map<std::string, Timeline> timelines;
 extern int timeline_position;
 extern bool timeline_is_playing;
+extern bool timeline_loop;
+extern int timeline_end;
 
 bool TimelineButton(std::string name, Timeline timeline);
 
@@ -112,7 +116,9 @@ template<typename T> bool TimelineButton(std::string name, T* ptr, std::function
 bool TimelineButton(std::string name, float* ptr, bool lock_interpolation = false);
 bool TimelineButton(std::string name, int* ptr, bool lock_interpolation = false);
 bool TimelineButton(std::string name, bool* ptr);
+bool TimelineButton(std::string name, Vec3f* ptr);
 
+void PlayTimeline();
 void RenderTimelineWidget();
 void UpdateTimelines();
 

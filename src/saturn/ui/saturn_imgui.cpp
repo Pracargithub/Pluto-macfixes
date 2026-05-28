@@ -40,6 +40,7 @@ bool is_wayland() {
 #include "saturn/libs/imgui/imgui.h"
 #include "saturn/libs/imgui/imgui_stdlib.h"
 #include "saturn/libs/imgui/imgui_internal.h"
+#include "saturn/libs/imgui/imgui_neo_sequencer.h"
 #include "saturn/libs/imgui/imgui_impl_sdl.h"
 #include "saturn/libs/imgui/imgui_impl_opengl3.h"
 #include "saturn/ui/studio_notifications.h"
@@ -153,8 +154,9 @@ void imgui_handle_binds(int scancode) {
         
             if (scancode == (int)configKeyPlutoFreezeCamera[i])
                 freeze_camera = !freeze_camera;
-            if (scancode == (int)configKeyPlutoHud[i])
-                enable_hud = !enable_hud;
+                
+            if (scancode == (int)configKeyPlutoPlayTimeline[i])
+                PlayTimeline();
 
             if (gMarioStates[0].marioObj && freeze_camera && !is_editing_panim) {
                 if (scancode == (int)configKeyPlutoPlayAnim[i]) {
@@ -187,6 +189,14 @@ void imgui_handle_binds(int scancode) {
 }
 
 void imgui_update() {
+    bool camera_automated = timelines.count("Camera###timeline_camera") > 0;
+    if (gCamera && !camera_automated && !(timeline_is_playing && freeze_camera)) {
+        for (int i = 0; i < 3; i++) {
+            camera_kf_state[i]     = gCamera->pos[i];
+            camera_kf_state[3 + i] = gCamera->focus[i];
+        }
+    }
+
     UpdateTimelines();
 
     ImGui_ImplOpenGL3_NewFrame();
@@ -287,16 +297,43 @@ void imgui_update() {
 
             // Machinima Camera
             if (ImGui::BeginMenu("Camera")) {
+                // To-do: This UI is super ugly
                 ImGui::PushItemWidth(150);
 
                 ImGui::Checkbox("Freeze Camera", &freeze_camera);
                 ImGui::BeginDisabled(!freeze_camera);
-                ImGui::SliderFloat("###freeze_camera_speed", &freeze_camera_speed, 0.f, 6.f, "Speed %.1f");
-                if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-                    freeze_camera_speed = 1.f;
-                ImGui::EndDisabled();
 
-                if (ImGui::BeginMenu("Camera Position")) {
+                if (ImGui::BeginMenu("Position###menu_camera_position")) {
+                    if (ImGui::InputFloat3("Position###camera_pos", camera_kf_state) && gCamera) {
+                        // Maintain focus offset
+                        float dx = gCamera->focus[0] - gCamera->pos[0];
+                        float dy = gCamera->focus[1] - gCamera->pos[1];
+                        float dz = gCamera->focus[2] - gCamera->pos[2];
+                        gCamera->pos[0] = camera_kf_state[0];
+                        gCamera->pos[1] = camera_kf_state[1];
+                        gCamera->pos[2] = camera_kf_state[2];
+                        gCamera->focus[0] = camera_kf_state[0] + dx;
+                        gCamera->focus[1] = camera_kf_state[1] + dy;
+                        gCamera->focus[2] = camera_kf_state[2] + dz;
+                        camera_kf_state[3] = gCamera->focus[0];
+                        camera_kf_state[4] = gCamera->focus[1];
+                        camera_kf_state[5] = gCamera->focus[2];
+                    }
+                    TimelineButton("Camera###timeline_camera", (Timeline){
+                        (void*)camera_kf_state, sizeof(camera_kf_state), false,
+                        [](void* out, void* a, void* b, float x) {
+                            float* o = (float*)out; float* fa = (float*)a; float* fb = (float*)b;
+                            for (int i = 0; i < 6; i++) o[i] = fa[i] + (fb[i] - fa[i]) * x;
+                        },
+                        [](void* a, void* b) { return memcmp(a, b, 6 * sizeof(float)) == 0; },
+                        [](void* value) {
+                            float* v = (float*)value;
+                            ImGui::BeginTooltip();
+                            ImGui::Text("Pos (%.1f, %.1f, %.1f)", v[0], v[1], v[2]);
+                            ImGui::EndTooltip();
+                        }
+                    });
+
                     if (ImGui::MenuItem("Save Current")) {
                         static int counter = 1;
                         saved_camera_positions.push_back({ counter, "Unnamed Camera " + std::to_string(counter),
@@ -322,8 +359,17 @@ void imgui_update() {
                             }
                             ImGui::SameLine();
                             if (ImGui::Button(restore_id.c_str())) {
-                                vec3f_copy(gLakituState.goalPos, cam.pos);
-                                vec3f_copy(gLakituState.goalFocus, cam.foc);
+                                // Apply saved pos/foc to camera_kf_state so a keyframe can be created if needed
+                                camera_kf_state[0] = cam.pos[0];
+                                camera_kf_state[1] = cam.pos[1];
+                                camera_kf_state[2] = cam.pos[2];
+                                camera_kf_state[3] = cam.foc[0];
+                                camera_kf_state[4] = cam.foc[1];
+                                camera_kf_state[5] = cam.foc[2];
+                                if (gCamera) {
+                                    vec3f_copy(gCamera->pos, cam.pos);
+                                    vec3f_copy(gCamera->focus, cam.foc);
+                                }
                             }
                             if (ImGui::IsItemHovered()) {
                                 ImGui::BeginTooltip();
@@ -338,6 +384,11 @@ void imgui_update() {
                     ), saved_camera_positions.end());
                     ImGui::EndMenu();
                 }
+
+                ImGui::SliderFloat("###freeze_camera_speed", &freeze_camera_speed, 0.f, 6.f, "Speed %.1f");
+                if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+                    freeze_camera_speed = 1.f;
+                ImGui::EndDisabled();
                 
                 ImGui::Separator();
 
@@ -438,17 +489,30 @@ void imgui_update() {
 
         // Timeline
         if (show_window_timeline) {
+            // Lower opacity when not focused, because the UI takes up so much screen space lol
+            static bool timeline_focused = true;
+            bool was_focused = timeline_focused;
+            if (!was_focused) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.2f);
             ImGui::SetNextWindowSizeConstraints(ImVec2(300.0f, 150.0f), ImVec2(FLT_MAX, FLT_MAX));
             ImGui::Begin("Timeline", &show_window_timeline);
+            timeline_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+            if (!was_focused)
+                for (int i = 0; i < ImGuiNeoSequencerCol_COUNT; i++) {
+                    ImVec4 col = ImGui::GetStyleNeoSequencerColorVec4(i);
+                    col.w *= 0.2f;
+                    ImGui::PushNeoSequencerStyleColor(i, col);
+                }
             RenderTimelineWidget();
+            if (!was_focused) ImGui::PopNeoSequencerStyleColor(ImGuiNeoSequencerCol_COUNT);
             ImGui::End();
+            if (!was_focused) ImGui::PopStyleVar();
 
-            static float value = 0;
+            /*static float value = 0;
             ImGui::Begin("Test", &show_window_timeline, ImGuiWindowFlags_AlwaysAutoResize);
             ImGui::DragFloat("Value", &value);
             ImGui::SameLine();
             TimelineButton("Value", &value);
-            ImGui::End();
+            ImGui::End();*/
         }
     }
 

@@ -16,6 +16,7 @@ extern "C" {
 
     extern bool freeze_camera;
     extern float freeze_camera_speed;
+    extern float camera_kf_state[6];
     extern float wiggle_intensity;
     extern bool wiggle_bone_detected;
     extern bool wind_enabled;

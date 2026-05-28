@@ -1,4 +1,5 @@
 #include "saturn.h"
+#include "saturn/saturn_keyframe.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -67,6 +68,8 @@ int walkpoint_speed = 127;
 /* Returns false when an ImGui text widget is active (i.e. the user is editing text). */
 bool allow_game_input;
 
+float camera_kf_state[6] = {};
+
 extern struct Animation *gCurAnim;
 
 /* "Machinima Camera", an extended freeze camera function that allows for free/fly camera and C-Up. */
@@ -82,6 +85,22 @@ int saturn_camera_update() {
         // Cancel input when another UI is present
         // This includes DJUI's menu/chat/console, and text inputs in Saturn's UI (i.e. CC editor GameShark)
         if (gDjuiInMainMenu || gDjuiChatBoxFocus || gDjuiConsoleFocus || !allow_game_input) return CAM_FROZEN;
+
+        // Timeline playback
+        if (timeline_is_playing) {
+            for (int i = 0; i < 3; i++) {
+                gCamera->pos[i]   = camera_kf_state[i];
+                gCamera->focus[i] = camera_kf_state[3 + i];
+            }
+            return CAM_FROZEN;
+        }
+        bool camera_automated = timelines.count("Camera###timeline_camera") > 0;
+        if (camera_automated) {
+            for (int i = 0; i < 3; i++) {
+                gCamera->pos[i]   = camera_kf_state[i];
+                gCamera->focus[i] = camera_kf_state[3 + i];
+            }
+        }
 
         if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_R]) {
             // Movement
@@ -126,16 +145,26 @@ int saturn_camera_update() {
         }
 
         // Ascend/Descend
-        f32 yvel;
+        static f32 yvel = 0.f;
         if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_T])
-            yvel += 5.f * freeze_camera_speed;
+            yvel += 3.f * freeze_camera_speed;
         else if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_U])
-            yvel -= 5.f * freeze_camera_speed;
+            yvel -= 3.f * freeze_camera_speed;
+        else
+            yvel = 0.f;
 
         gCamera->pos[1] += yvel;
         gCamera->focus[1] += yvel;
         yvel = approach_f32_symmetric(yvel, 0.f, 2.f);
         yvel = approach_f32_asymptotic(yvel, 0.f, 0.1f);
+
+        // Timeline playback
+        if (camera_automated) {
+            for (int i = 0; i < 3; i++) {
+                camera_kf_state[i]     = gCamera->pos[i];
+                camera_kf_state[3 + i] = gCamera->focus[i];
+            }
+        }
 
         // Misc. Animation
         if (gMarioStates[0].marioObj != NULL) {

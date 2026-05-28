@@ -106,7 +106,7 @@ unsigned int configKeyPlutoMenu[MAX_BINDS]          = { 0x003B, 0x100c, VK_INVAL
 unsigned int configKeyPlutoScreenshot[MAX_BINDS]    = { 0x003C, VK_INVALID, VK_INVALID };
 unsigned int configKeyPlutoChroma[MAX_BINDS]        = { 0x003D, VK_INVALID, VK_INVALID };
 unsigned int configKeyPlutoFreezeCamera[MAX_BINDS]  = { 0x0021, 0x100b, VK_INVALID };
-unsigned int configKeyPlutoHud[MAX_BINDS]           = { 0x003E, VK_INVALID, VK_INVALID };
+unsigned int configKeyPlutoPlayTimeline[MAX_BINDS]  = { 0x003E, VK_INVALID, VK_INVALID };
 unsigned int configKeyPlutoPlayAnim[MAX_BINDS]      = { 0x0018, 0x100d, VK_INVALID };
 unsigned int configKeyPlutoPauseAnim[MAX_BINDS]     = { 0x0019, 0x100e, VK_INVALID };
 unsigned int configKeyPlutoCreateDialog[MAX_BINDS] = { VK_INVALID, VK_INVALID, VK_INVALID };
@@ -229,7 +229,7 @@ static const struct ConfigOption options[] = {
     {.name = "key_pluto_screenshot",           .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoScreenshot},
     {.name = "key_pluto_auto_chroma",          .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoChroma},
     {.name = "key_pluto_freeze_camera",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoFreezeCamera},
-    {.name = "key_pluto_hud",                  .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoHud},
+    {.name = "key_pluto_play_timeline",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoPlayTimeline},
     {.name = "key_pluto_play_anim",            .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoPlayAnim},
     {.name = "key_pluto_pause_anim",           .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoPauseAnim},
     {.name = "key_pluto_create_dialog",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlutoCreateDialog},

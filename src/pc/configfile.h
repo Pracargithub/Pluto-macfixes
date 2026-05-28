@@ -65,7 +65,7 @@ extern unsigned int configKeyPlutoMenu[];
 extern unsigned int configKeyPlutoScreenshot[];
 extern unsigned int configKeyPlutoChroma[];
 extern unsigned int configKeyPlutoFreezeCamera[];
-extern unsigned int configKeyPlutoHud[];
+extern unsigned int configKeyPlutoPlayTimeline[];
 extern unsigned int configKeyPlutoPlayAnim[];
 extern unsigned int configKeyPlutoPauseAnim[];
 extern unsigned int configKeyPlutoCreateDialog[];

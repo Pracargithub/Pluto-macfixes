@@ -51,7 +51,7 @@ static u8 *RGBA32_RGBA16(const u8 *aData, u64 aLength) {
     return _Buffer;
 }
 
-uint32_t gTextureId = 0;
+
 
 /* Fetches a TexturePath's raw texture data in RGBA32 format */
 u8* SetTextureData(TexturePath Texture, int* Width, int* Height, unsigned int* Preview) {
@@ -218,13 +218,6 @@ void InitTextureData(int exp_index, int tex_index, int tile) {
                            &current_expressions[exp_index].Textures[tex_index].Width,
                            &current_expressions[exp_index].Textures[tex_index].Height,
                            &current_expressions[exp_index].Textures[tex_index].Preview);
-
-        if (gTextureId == 0) gTextureId = gfx_get_current_rendering_api()->new_texture();
-        gfx_get_current_rendering_api()->select_texture(tile+1, gTextureId);
-        gfx_get_current_rendering_api()->set_sampler_parameters(tile+1, false, 0, 0);
-        gfx_get_current_rendering_api()->upload_texture(current_expressions[exp_index].Textures[tex_index].RawData,
-                                                        current_expressions[exp_index].Textures[tex_index].Width,
-                                                        current_expressions[exp_index].Textures[tex_index].Height);
     }
 }
 

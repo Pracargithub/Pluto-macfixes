@@ -13,6 +13,7 @@
 #include "saturn/saturn_models.h"
 #include "saturn/saturn_textures.h"
 #include "saturn/saturn_animations.h"
+#include "saturn/saturn_keyframe.h"
 
 class FileBrowserEntry {
 private:
@@ -53,6 +54,15 @@ std::map<std::string, std::string> selected_paths = {};
 std::map<std::filesystem::path, FileBrowserEntry*> scanned_paths = {};
 std::filesystem::path last_scanned_path;
 std::function<void(std::string)> drag_callback = nullptr;
+std::map<std::string, std::vector<std::string>> browser_flat_lists = {};
+std::map<std::string, int> browser_timeline_index = {};
+
+static void flatten_browser_entries(FileBrowserEntry& dir, const std::string& path, std::vector<std::string>& out) {
+    for (FileBrowserEntry& entry : dir.dir()) {
+        if (entry.is_dir()) flatten_browser_entries(entry, path + entry.name() + "/", out);
+        else out.push_back(path + entry.name());
+    }
+}
 
 void saturn_file_browser_item(std::string item) {
     curr->add_file(item);
@@ -225,6 +235,14 @@ void saturn_file_browser_tools(std::string id, bool search, int exp_index) {
             current_expressions[exp_index].Refresh();
         }
     }
+    ImGui::SameLine();
+    if (exp_index >= 0 && exp_index < (int)current_expressions.size()) {
+        TimelineButton("Expr_" + current_expressions[exp_index].Name, &current_expressions[exp_index].CurrentIndex, true);
+    } else if (exp_index == -1) {
+        if (browser_timeline_index.find(id) == browser_timeline_index.end())
+            browser_timeline_index[id] = 0;
+        //TimelineButton("ColorCode_" + id, &browser_timeline_index[id], true);
+    }
     if (search) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(ImGui::GetWindowWidth()-35);
@@ -248,10 +266,34 @@ bool saturn_file_browser_show(std::string id, int exp_index) {
         search[0] = 0;
         search_terms.insert({ id, search });
     }
+
+    // Build flat file list for color code timeline index control
+    if (exp_index == -1) {
+        browser_flat_lists[id].clear();
+        flatten_browser_entries(root, "", browser_flat_lists[id]);
+    }
+
     ImGui::BeginChild(("###file_browser_" + id).c_str(), ImVec2(200, browser_height), ImGuiChildFlags_Border);
     saturn_file_browser_tools(id, true, exp_index);
     bool result = saturn_file_browser_create_imgui(root, "", id, true, exp_index);
     ImGui::EndChild();
+
+    // If a color code timeline is active, check if the index changed and trigger a load
+    if (exp_index == -1) {
+        std::string tl_key = "ColorCode_" + id;
+        if (timelines.count(tl_key) && browser_timeline_index.find(id) != browser_timeline_index.end()) {
+            auto& flat = browser_flat_lists[id];
+            if (!flat.empty()) {
+                int idx = std::max(0, std::min(browser_timeline_index[id], (int)flat.size() - 1));
+                browser_timeline_index[id] = idx;
+                if (flat[idx] != selected_paths[id]) {
+                    selected_path = selected_paths[id] = flat[idx];
+                    result = true;
+                }
+            }
+        }
+    }
+
     saturn_file_browser_clear();
     return result;
 }

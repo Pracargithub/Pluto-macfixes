@@ -14,6 +14,7 @@
 #include "saturn/saturn_colors.h"
 #include "saturn/saturn_models.h"
 #include "saturn/saturn_textures.h"
+#include "saturn/saturn_keyframe.h"
 #include "saturn/ui/saturn_imgui.h"
 #include "saturn/ui/saturn_imgui_colors.h"
 #include "saturn/ui/saturn_imgui_file_browser.h"
@@ -150,6 +151,8 @@ void OpenComboSelector(Expression* expression, int index) {
                 if (is_selected) expression->CurrentIndex = select_index;
                 else expression->CurrentIndex = deselect_index;
             }
+
+            ImGui::SameLine(); TimelineButton(std::string(label_name) + "Key", &expression->CurrentIndex, true);
 
             // Expression preview
             OpenExpressionPreview(&expression->Textures[expression->CurrentIndex]);
@@ -300,6 +303,9 @@ void SwitchOption(const char* label, int* state, const char* array[], int size) 
         ImGui::PopItemWidth();
         ImGui::EndPopup();
     }
+
+    ImGui::SameLine();
+    TimelineButton(std::string(label) + "Key", state, true);
 }
 
 void OpenSwitchOptions() {
@@ -346,8 +352,11 @@ void ScaleWidget(std::string label, float* scaleX, float* scaleY, float* scaleZ)
     if (ImGui::BeginPopup((label + "Presets").c_str())) {
         if (ImGui::MenuItem("Reset")) *scaleX = 1.f, *scaleY = 1.f, *scaleZ = 1.f;
         ImGui::SliderFloat((label + "_x").c_str(), scaleX, 0.f, 5.f, "X %.2f", ImGuiSliderFlags_NoRoundToFormat);
+        ImGui::SameLine(); TimelineButton("Scale X", scaleX);
         ImGui::SliderFloat((label + "_y").c_str(), scaleY, 0.f, 5.f, "Y %.2f", ImGuiSliderFlags_NoRoundToFormat);
+        ImGui::SameLine(); TimelineButton("Scale Y", scaleY);
         ImGui::SliderFloat((label + "_z").c_str(), scaleZ, 0.f, 5.f, "Z %.2f", ImGuiSliderFlags_NoRoundToFormat);
+        ImGui::SameLine(); TimelineButton("Scale Z", scaleZ);
         ImGui::EndPopup();
     }
     ImGui::PopItemWidth();
@@ -369,7 +378,8 @@ void OpenExtraOptions() {
         ImGui::Dummy(ImVec2(15, 0));
         if (ImGuiKnobs::Knob("Angle", &face_angle, -180.f, 180.f, 0.f, "%.0f deg", ImGuiKnobVariant_Dot, 0.f, ImGuiKnobFlags_DragHorizontal))
             gMarioStates[0].faceAngle[1] = (s16)(face_angle * 182.04f);
-        else face_angle = (float)gMarioStates[0].faceAngle[1] / 182.04;
+        else if (!timelines.count("Angle"))
+            face_angle = (float)gMarioStates[0].faceAngle[1] / 182.04;
         if (ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
             ImGui::TextDisabled("Right click for more options");
@@ -386,6 +396,7 @@ void OpenExtraOptions() {
             ImGui::EndPopup();
         }
 
+        ImGui::SameLine(); TimelineButton("Angle", &face_angle);
         ImGui::SameLine();
         ImGuiKnobs::KnobInt("Walkpoint", &walkpoint_speed, 0, 127, 0, "%d", ImGuiKnobVariant_Tick, 0, ImGuiKnobFlags_DragHorizontal);
         if (ImGui::IsItemHovered()) {
@@ -404,9 +415,6 @@ void OpenExtraOptions() {
 
         ImGui::Separator();
         ImGui::Checkbox("Movement Particles", &enable_model_particles);
-        if (wiggle_bone_detected) {
-            ImGui::SliderFloat("###wiggle_intensity", &wiggle_intensity, 0.f, 3.f, "Wiggle %.2f", ImGuiSliderFlags_NoRoundToFormat);
-        }
 
         ImGui::PopItemWidth();
     }

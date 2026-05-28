@@ -89,6 +89,7 @@ struct Timeline {
     void* ptr;
     size_t size;
     bool lock_interpolation;
+    bool require_active; // if true, only create NEW keyframes when an ImGui item is active
     Interpolate interpolate;
     Compare compare;
     OnHover on_hover;
@@ -106,7 +107,7 @@ bool TimelineButton(std::string name, Timeline timeline);
 
 template<typename T> bool TimelineButton(std::string name, T* ptr, std::function<void(T*, T*, T*, float)> interpolate, std::function<void(T*)> on_hover = nullptr, bool lock_interpolation = false) {
     return TimelineButton(name, (Timeline){
-        (void*)ptr, sizeof(T), lock_interpolation,
+        (void*)ptr, sizeof(T), lock_interpolation, false,
         [=](void* out, void* a, void* b, float x) { return interpolate((T*)out, (T*)a, (T*)b, x); },
         [=](void* a, void* b) { return *(T*)a == *(T*)b; },
         [=](void* value) { on_hover((T*)value); }

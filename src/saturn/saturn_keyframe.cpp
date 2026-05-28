@@ -43,7 +43,7 @@ bool TimelineButton(std::string name, bool* ptr) {
 
 bool TimelineButton(std::string name, Vec3f* ptr) {
     return TimelineButton(name, (Timeline){
-        (void*)ptr, sizeof(Vec3f), false,
+        (void*)ptr, sizeof(Vec3f), false, true,
         [](void* out, void* a, void* b, float x) {
             float* o = (float*)out; float* fa = (float*)a; float* fb = (float*)b;
             o[0] = (fb[0] - fa[0]) * x + fa[0];
@@ -61,8 +61,9 @@ bool TimelineButton(std::string name, Vec3f* ptr) {
 bool TimelineButton(std::string name, Timeline timeline) {
     auto it = timelines.find(name);
     bool automated = it != timelines.end();
+    std::string btn_label = (automated ? "X##tl_" : "~##tl_") + name;
     if (automated) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0x56/255.f, 0xFF/255.f, 0xBB/255.f, 1.0f));
-    bool clicked = ImGui::Button(automated ? "X" : "~");
+    bool clicked = ImGui::Button(btn_label.c_str());
     if (automated) ImGui::PopStyleColor();
 
     if (ImGui::IsItemHovered()) {
@@ -144,12 +145,12 @@ void UpdateTimelines() {
             // playhead moved; apply interpolated value
             memcpy(timeline.ptr, out, timeline.size);
 
-        else if (!ImGui::IsAnyItemActive() && !timeline.compare(timeline.ptr, out)) {
+        else if (!timeline.compare(timeline.ptr, out)) {
             // value is different than what we expect
             if (kf->position == timeline_position)
                 // a keyframe exists at the current timeline position; overwrite its value
                 memcpy(kf->get(timeline.size), timeline.ptr, timeline.size);
-            else {
+            else if (!timeline.require_active || ImGui::IsAnyItemActive()) {
                 // create a new keyframe with the value
                 timeline.keyframes.push_back(Keyframe());
                 kf = &timeline.keyframes.back();

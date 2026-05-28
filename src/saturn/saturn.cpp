@@ -64,6 +64,7 @@ bool is_spinning;
 float spinning_speed = 1.f;
 int player_speed = 127;
 int walkpoint_speed = 127;
+bool anim_sync_to_timeline = false;
 
 /* Returns false when an ImGui text widget is active (i.e. the user is editing text). */
 bool allow_game_input;
@@ -87,19 +88,13 @@ int saturn_camera_update() {
         if (gDjuiInMainMenu || gDjuiChatBoxFocus || gDjuiConsoleFocus || !allow_game_input) return CAM_FROZEN;
 
         // Timeline playback
-        if (timeline_is_playing) {
-            for (int i = 0; i < 3; i++) {
-                gCamera->pos[i]   = camera_kf_state[i];
-                gCamera->focus[i] = camera_kf_state[3 + i];
-            }
-            return CAM_FROZEN;
-        }
         bool camera_automated = timelines.count("Camera###timeline_camera") > 0;
         if (camera_automated) {
             for (int i = 0; i < 3; i++) {
                 gCamera->pos[i]   = camera_kf_state[i];
                 gCamera->focus[i] = camera_kf_state[3 + i];
             }
+            if (timeline_is_playing) return CAM_FROZEN;
         }
 
         if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_R]) {

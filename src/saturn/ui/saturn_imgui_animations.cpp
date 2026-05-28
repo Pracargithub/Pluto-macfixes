@@ -381,7 +381,7 @@ void OpenAnimationsMenu() {
         ImGui::BeginDisabled(!override_anim);
             if (enable_custom_anim && override_anim) ImGui::TextWrapped("Now Playing: %s", current_pluto_anim.Name.c_str());
             else ImGui::TextWrapped("Now Playing: %s", saturn_animations[gMarioStates[0].marioObj->header.gfx.animInfo.animID]);
-            ImGui::BeginDisabled(!pause_anim);
+            ImGui::BeginDisabled(!pause_anim || anim_sync_to_timeline);
                 ImGui::SliderInt("###animation_frame", &paused_frame, gMarioStates[0].marioObj->header.gfx.animInfo.curAnim->loopStart, gMarioStates[0].marioObj->header.gfx.animInfo.curAnim->loopEnd-1, "frame %d", ImGuiSliderFlags_AlwaysClamp);
             ImGui::EndDisabled();
             if (ImGui::Checkbox("Paused", &pause_anim))
@@ -414,5 +414,12 @@ void OpenAnimationsMenu() {
         if (!is_editing_panim && !enable_custom_anim) override_anim = false;
     }
     if (was_editing_panim) ImGui::PopStyleColor();
+    if (show_window_timeline) {
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!is_editing_panim && !override_anim);
+        if (ImGui::Checkbox("Sync to Timeline", &anim_sync_to_timeline) && !is_editing_panim && !override_anim)
+            anim_sync_to_timeline = false;
+        ImGui::EndDisabled();
+    }
     ImGui::EndDisabled();
 }

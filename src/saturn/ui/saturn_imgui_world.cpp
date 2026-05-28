@@ -8,6 +8,7 @@
 #include "saturn/saturn_colors.h"
 #include "saturn/saturn_models.h"
 #include "saturn/saturn_textures.h"
+#include "saturn/saturn_keyframe.h"
 #include "saturn/libs/imgui/imgui.h"
 #include "saturn/libs/imgui/imgui_internal.h"
 #include "saturn/libs/imgui/imgui_impl_sdl.h"
@@ -58,6 +59,7 @@ void saturn_set_chroma_color(ImVec4 color) {
 
 void OpenAutoChromaMenu() {
     ImGui::Checkbox("Chroma Key", &auto_chroma);
+    ImGui::SameLine(); TimelineButton("Chroma Key", &auto_chroma);
     ImGui::BeginChild("auto_chroma", ImVec2(175, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY);
     ImGui::BeginDisabled(!auto_chroma);
     // Skybox Color
@@ -190,8 +192,9 @@ void OpenQuickOptions() {
             Color4Widget("Fog Color", &uiFogColor, shade_lighting_fog);
             ImGui::EndPopup();
         }
-        ImGui::SetNextItemWidth(155);
+        ImGui::SetNextItemWidth(135);
         ImGui::DragFloat3("##lighting_pos", shade_lighting_dir, 0.01f, -1.f, 1.f, "%.2f");
+        ImGui::SameLine(); TimelineButton("Light Dir", (Vec3f*)&shade_lighting_dir);
         ImGui::EndChild();
     }
 

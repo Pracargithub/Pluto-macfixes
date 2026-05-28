@@ -198,6 +198,22 @@ void imgui_update() {
     }
 
     UpdateTimelines();
+    if (timelines.count("Angle") && gMarioStates[0].marioObj)
+        gMarioStates[0].faceAngle[1] = (s16)(face_angle * 182.04f);
+
+    // Sync anim frame to timeline cursor
+    if (anim_sync_to_timeline && (is_editing_panim || override_anim) && gMarioStates[0].marioObj) {
+        struct Animation* curAnim = gMarioStates[0].marioObj->header.gfx.animInfo.curAnim;
+        if (curAnim) {
+            int anim_len = curAnim->loopEnd - curAnim->loopStart;
+            if (anim_len > 0) {
+                timeline_end = anim_len - 1;
+                pause_anim = true;
+                int clamped = timeline_position < 0 ? 0 : (timeline_position > anim_len - 1 ? anim_len - 1 : timeline_position);
+                paused_frame = curAnim->loopStart + clamped;
+            }
+        }
+    }
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(current_window);
@@ -320,7 +336,7 @@ void imgui_update() {
                         camera_kf_state[5] = gCamera->focus[2];
                     }
                     TimelineButton("Camera###timeline_camera", (Timeline){
-                        (void*)camera_kf_state, sizeof(camera_kf_state), false,
+                        (void*)camera_kf_state, sizeof(camera_kf_state), false, false,
                         [](void* out, void* a, void* b, float x) {
                             float* o = (float*)out; float* fa = (float*)a; float* fb = (float*)b;
                             for (int i = 0; i < 6; i++) o[i] = fa[i] + (fb[i] - fa[i]) * x;
@@ -401,6 +417,7 @@ void imgui_update() {
                 ImGui::SliderInt("###camera_fov", (int*)&configPlutoCameraFov, 0, 100, "FOV %d");
                 if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
                     configPlutoCameraFov = 45;
+                ImGui::SameLine(); TimelineButton("FOV", (int*)&configPlutoCameraFov);
 
                 ImGui::PopItemWidth();
                 ImGui::EndMenu();

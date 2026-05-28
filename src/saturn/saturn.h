@@ -57,6 +57,7 @@ extern "C" {
     extern float spinning_speed;
     extern int player_speed;
     extern int walkpoint_speed;
+    extern bool anim_sync_to_timeline;
 
     void saturn_action_idle(struct MarioState*);
     void saturn_update_frame();

@@ -391,9 +391,9 @@ static bool gfx_texture_cache_lookup(int tile, struct TextureHashmapNode **n, co
     }
     if (gfx_texture_cache.pool_pos >= sizeof(gfx_texture_cache.pool) / sizeof(struct TextureHashmapNode)) {
         // Pool is full. We just invalidate everything and start over.
+        memset(gfx_texture_cache.hashmap, 0, sizeof(gfx_texture_cache.hashmap));
         gfx_texture_cache.pool_pos = 0;
         node = &gfx_texture_cache.hashmap[hash];
-        // puts("Clearing texture cache");
     }
     if (!node) { return false; }
     *node = &gfx_texture_cache.pool[gfx_texture_cache.pool_pos++];
@@ -1497,12 +1497,10 @@ void saturn_update_texture_expression(const uint8_t* addr, uint8_t tile, uint32_
     rdp.texture_tile.siz = size;
 
     uint32_t wordSizeShift = (size == G_IM_SIZ_32b) ? 2 : 1;
-    uint32_t lrs = (width * height) - 1;
-    uint32_t sizeBytes = (lrs + 1) << wordSizeShift;
+    uint32_t sizeBytes = (uint32_t)(width * height) << wordSizeShift;
     rdp.loaded_texture[tile].size_bytes = sizeBytes;
 
-    uint32_t line = (((width * 2) + 7) >> 3);
-    rdp.texture_tile.line_size_bytes = line * 8;
+    rdp.texture_tile.line_size_bytes = (uint32_t)width * 2;
 }
 
 static void gfx_dp_set_texture_image(UNUSED uint32_t format, uint32_t size, UNUSED uint32_t width, const void* addr) {

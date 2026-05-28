@@ -1102,6 +1102,8 @@ static int  s_wiggle_idx = 0;  // reset each frame, uniquely identifies each mco
 static s16  s_wiggle_prev_face_angle = 0;
 static bool s_wiggle_face_snapped = false;
 static bool s_wiggle_prev_freeze = false; // freeze_camera state last frame
+static Mat4 s_wiggle_cam_inv;              // inverse of current frame's camera matrix (world-from-view)
+static bool s_wiggle_cam_inv_valid = false;
 
 // Mario flipping around (180 degrees) causes weird lerping issues so we snap the wiggle instead
 #define WIGGLE_FACE_SNAP_THRESHOLD 10922
@@ -1116,6 +1118,7 @@ static void wiggle_advance_frame(void) {
     if (freeze_camera && !s_wiggle_prev_freeze)
         wiggle_reset_all();
     s_wiggle_prev_freeze = freeze_camera;
+    s_wiggle_cam_inv_valid = false; // reload inverse
     s_wiggle_idx = 0;
 }
 
@@ -1151,6 +1154,45 @@ static void wiggle_clamp_dist(Mat4 smooth_mat, Mat4 live_mat, f32 max_dist) {
     }
 }
 
+/* World-space conversion. */
+static bool wiggle_ensure_cam_inv(void) {
+    if (s_wiggle_cam_inv_valid) return true;
+    if (sCameraNode == NULL || sCameraNode->matrixPtr == NULL) return false;
+    const Mat4 *C = sCameraNode->matrixPtr;
+
+    for (int c = 0; c < 3; c++) {
+        for (int r = 0; r < 3; r++)
+            s_wiggle_cam_inv[c][r] = (*C)[r][c];
+        s_wiggle_cam_inv[c][3] = 0.0f;
+    }
+    s_wiggle_cam_inv[3][0] = sCameraNode->pos[0];
+    s_wiggle_cam_inv[3][1] = sCameraNode->pos[1];
+    s_wiggle_cam_inv[3][2] = sCameraNode->pos[2];
+    s_wiggle_cam_inv[3][3] = 1.0f;
+    s_wiggle_cam_inv_valid = true;
+    return true;
+}
+
+static void wiggle_pos_to_world(Vec3f dest, f32 cam_pos[3]) {
+    if (!wiggle_ensure_cam_inv()) {
+        dest[0] = cam_pos[0]; dest[1] = cam_pos[1]; dest[2] = cam_pos[2];
+        return;
+    }
+    for (int r = 0; r < 3; r++)
+        dest[r] = s_wiggle_cam_inv[0][r] * cam_pos[0]
+                + s_wiggle_cam_inv[1][r] * cam_pos[1]
+                + s_wiggle_cam_inv[2][r] * cam_pos[2]
+                + s_wiggle_cam_inv[3][r];
+}
+
+static void wiggle_mat_to_world(Mat4 dest, Mat4 cam_mat) {
+    if (!wiggle_ensure_cam_inv()) {
+        mtxf_copy(dest, cam_mat);
+        return;
+    }
+    mtxf_mul(dest, cam_mat, s_wiggle_cam_inv);
+}
+
 /* Animations that look fucky with wiggle physics so we avoid them. */
 static bool wiggle_should_snap(void) {
     if (gMarioObject == NULL) return false;
@@ -1172,13 +1214,20 @@ static bool wiggle_should_snap(void) {
 // All wiggle bones have per-bone parameters for smoothness and max distance, which are configured from SFast64 (or edited in the C files)
 static void wiggle_update_ex(int bone_idx, f32 smooth, f32 maxDist, f32 snapSmooth, f32 springK, f32 springDamp) {
     if (bone_idx >= WIGGLE_MAX_BONES) return;
+
+    // Convert the current parent-bone matrix and position to world space once
+    Mat4  cur_world_mat;
+    Vec3f cur_world_pos;
+    wiggle_mat_to_world(cur_world_mat, gMatStack[gMatStackIndex]);
+    wiggle_pos_to_world(cur_world_pos, gMatStack[gMatStackIndex][3]);
+
     if (!wiggle_initialized[bone_idx] || s_wiggle_face_snapped) {
-        mtxf_copy(wiggle_smooth[bone_idx],      gMatStack[gMatStackIndex]);
-        mtxf_copy(wiggle_smooth_prev[bone_idx], gMatStack[gMatStackIndex]);
+        mtxf_copy(wiggle_smooth[bone_idx],      cur_world_mat);
+        mtxf_copy(wiggle_smooth_prev[bone_idx], cur_world_mat);
         for (int k = 0; k < 3; k++) {
             wiggle_spring_off[bone_idx][k]       = 0.0f;
             wiggle_spring_vel[bone_idx][k]       = 0.0f;
-            wiggle_live_prev[bone_idx][k]        = gMatStack[gMatStackIndex][3][k];
+            wiggle_live_prev[bone_idx][k]        = cur_world_pos[k];
             wiggle_live_delta_prev[bone_idx][k]  = 0.0f;
         }
         wiggle_skip_spring[bone_idx] = true;
@@ -1187,11 +1236,11 @@ static void wiggle_update_ex(int bone_idx, f32 smooth, f32 maxDist, f32 snapSmoo
     }
     if (wiggle_should_snap()) {
         mtxf_copy(wiggle_smooth_prev[bone_idx], wiggle_smooth[bone_idx]);
-        mtxf_lerp(wiggle_smooth[bone_idx], wiggle_smooth[bone_idx], gMatStack[gMatStackIndex], snapSmooth);
+        mtxf_lerp(wiggle_smooth[bone_idx], wiggle_smooth[bone_idx], cur_world_mat, snapSmooth);
         for (int k = 0; k < 3; k++) {
             wiggle_spring_off[bone_idx][k]       = 0.0f;
             wiggle_spring_vel[bone_idx][k]       = 0.0f;
-            wiggle_live_prev[bone_idx][k]        = gMatStack[gMatStackIndex][3][k];
+            wiggle_live_prev[bone_idx][k]        = cur_world_pos[k];
             wiggle_live_delta_prev[bone_idx][k]  = 0.0f;
         }
         wiggle_skip_spring[bone_idx] = true;
@@ -1199,15 +1248,16 @@ static void wiggle_update_ex(int bone_idx, f32 smooth, f32 maxDist, f32 snapSmoo
     }
 
     mtxf_copy(wiggle_smooth_prev[bone_idx], wiggle_smooth[bone_idx]);
-    mtxf_lerp(wiggle_smooth[bone_idx], wiggle_smooth[bone_idx], gMatStack[gMatStackIndex], smooth);
-    wiggle_clamp_dist(wiggle_smooth[bone_idx], gMatStack[gMatStackIndex], maxDist);
+    mtxf_lerp(wiggle_smooth[bone_idx], wiggle_smooth[bone_idx], cur_world_mat, smooth);
+    wiggle_clamp_dist(wiggle_smooth[bone_idx], cur_world_mat, maxDist);
 
     static const f32 INERTIA = 0.5f;
     f32 spring_max = maxDist * 0.45f;
     bool skip = wiggle_skip_spring[bone_idx];
     wiggle_skip_spring[bone_idx] = false;
     for (int k = 0; k < 3; k++) {
-        f32 parent_delta = gMatStack[gMatStackIndex][3][k] - wiggle_live_prev[bone_idx][k];
+        // Use world space so camera movement and keyframes don't fuck with physics
+        f32 parent_delta = cur_world_pos[k] - wiggle_live_prev[bone_idx][k];
         if (!skip) {
             f32 parent_accel = parent_delta - wiggle_live_delta_prev[bone_idx][k];
             wiggle_spring_vel[bone_idx][k] -= parent_accel * INERTIA;
@@ -1219,7 +1269,7 @@ static void wiggle_update_ex(int bone_idx, f32 smooth, f32 maxDist, f32 snapSmoo
         if (wiggle_spring_off[bone_idx][k] >  spring_max) { wiggle_spring_off[bone_idx][k] =  spring_max; wiggle_spring_vel[bone_idx][k] = 0.0f; }
         if (wiggle_spring_off[bone_idx][k] < -spring_max) { wiggle_spring_off[bone_idx][k] = -spring_max; wiggle_spring_vel[bone_idx][k] = 0.0f; }
         wiggle_live_delta_prev[bone_idx][k] = parent_delta;
-        wiggle_live_prev[bone_idx][k]       = gMatStack[gMatStackIndex][3][k];
+        wiggle_live_prev[bone_idx][k]       = cur_world_pos[k];
     }
 }
 
@@ -1369,6 +1419,14 @@ static void geo_process_extra_wiggle(struct GraphNodeExtraWiggle *node) {
                 wp_cur[3][_k]  += wiggle_spring_off[my_wiggle_idx][_k];
                 wp_prev[3][_k] += wiggle_spring_off[my_wiggle_idx][_k];
             }
+            // world -> camera space: mtxf_mul(d,a,b) = b*a, so mtxf_mul(d, world, cam) = cam*world
+            if (sCameraNode != NULL && sCameraNode->matrixPtr != NULL)
+                mtxf_mul(wp_cur, wp_cur, *sCameraNode->matrixPtr);
+            Mat4 *prevCamMat = (sCameraNode != NULL && sCameraNode->matrixPtrPrev != NULL)
+                                ? sCameraNode->matrixPtrPrev
+                                : (sCameraNode != NULL ? sCameraNode->matrixPtr : NULL);
+            if (prevCamMat != NULL)
+                mtxf_mul(wp_prev, wp_prev, *prevCamMat);
             mtxf_mul(gMatStack[gMatStackIndex + 1], matrix, wp_cur);
             mtxf_rotate_xyz_and_translate(matrix, translationPrev, gVec3sZero);
             mtxf_mul(gMatStackPrev[gMatStackIndex + 1], matrix, wp_prev);

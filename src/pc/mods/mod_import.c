@@ -1,5 +1,6 @@
 #include "PR/ultratypes.h"
 #include <types.h>
+#include "pc/gfx/gfx_pc.h"
 #include "pc/platform.h"
 #include "pc/utils/miniz/miniz.h"
 #include "pc/debuglog.h"
@@ -7,7 +8,9 @@
 #include "pc/djui/djui_language.h"
 #include "pc/djui/djui_popup.h"
 #include "mods.h"
+
 #include "mods_utils.h"
+#include "saturn/saturn_models.h"
 
 static bool mod_import_lua(char* src) {
     char dst[SYS_MAX_PATH] = { 0 };
@@ -209,11 +212,6 @@ bool mod_import_file(char* path) {
     bool isDynos = false;
     bool ret = false;
 
-    if (gNetworkType != NT_NONE) {
-        djui_popup_create(DLANG(NOTIF, IMPORT_FAIL_INGAME), 2);
-        return false;
-    }
-
     if (str_ends_with(path, ".lua") || str_ends_with(path, ".luac")) {
         isLua = true;
         ret = mod_import_lua(path);
@@ -234,6 +232,11 @@ bool mod_import_file(char* path) {
             dynos_packs_init();
             djui_language_replace(DLANG(NOTIF, IMPORT_DYNOS_SUCCESS), msg, SYS_MAX_PATH, '@', basename);
             djui_popup_create(msg, 2);
+        }
+
+        if (gNetworkType != NT_NONE) {
+            gfx_texture_cache_clear();
+            forceReload = true;
         }
     } else {
         djui_language_replace(DLANG(NOTIF, IMPORT_FAIL), msg, SYS_MAX_PATH, '@', basename);

@@ -123,8 +123,8 @@ void BoneEditorWindow() {
 
         for (int bi = 1; bi < (int)current_pluto_anim.Bones.size(); bi++) {
             const PlutoBone& bone = current_pluto_anim.Bones[bi];
-            // Hide custom/wiggle bone dots when posing a vanilla animation
-            if (!enable_custom_anim && (bone.IsCustom || bone.IsWiggle)) continue;
+            // Hide custom/wiggle bone dots when not in pose editor and not using a custom anim
+            if (!enable_custom_anim && !is_editing_panim && (bone.IsCustom || bone.IsWiggle)) continue;
             const f32* cam = bone.WorldPosition;
             if (cam[2] >= 0.0f) continue;  // behind camera
 
@@ -403,15 +403,41 @@ void OpenAnimationsMenu() {
     bool was_editing_panim = is_editing_panim;
     if (was_editing_panim) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0x38/255.f, 0xA7/255.f, 0x7A/255.f, 1.0f));
     if (ImGui::Button("Edit Pose")) {
+        bool bones_fixed = false;
         if (!enable_custom_anim && !is_editing_panim) {
             SaveAndScheduleRestoreBoneFlags();
+            // Save bone metadata (IsCustom/IsWiggle/flags) before ConvertFromVanilla wipes Bones[]
+            std::vector<PlutoBone> saved_bones = current_pluto_anim.Bones;
             current_pluto_anim = ConvertFromVanilla();
             saturn_play_pluto_animation();
+            // Custom/wiggle bones shouldn't steal any rotation values from vanilla bones
+            // Also, offset and scale isn't really necessary here
+            if (!saved_bones.empty() && (int)saved_bones.size() > (int)current_pluto_anim.Bones.size()) {
+                std::vector<PlutoBone> vanilla_rots = current_pluto_anim.Bones;
+                current_pluto_anim.Bones = saved_bones;
+                for (auto& b : current_pluto_anim.Bones) {
+                    b.Rotation[0] = b.Rotation[1] = b.Rotation[2] = 0.0f;
+                    vec3s_set(b.Translation, 0, 0, 0);
+                    b.Scale[0] = b.Scale[1] = b.Scale[2] = 1.0f;
+                }
+                int vslot = 0;
+                for (auto& b : current_pluto_anim.Bones) {
+                    if (!b.IsCustom && !b.IsWiggle && vslot < (int)vanilla_rots.size()) {
+                        b.Rotation[0] = vanilla_rots[vslot].Rotation[0];
+                        b.Rotation[1] = vanilla_rots[vslot].Rotation[1];
+                        b.Rotation[2] = vanilla_rots[vslot].Rotation[2];
+                        vslot++;
+                    }
+                }
+                bones_fixed = true;
+            }
         }
         is_editing_panim = !is_editing_panim;
         
         // Auto-push custom bones when entering pose editor mode
-        if (is_editing_panim && enable_custom_anim) {
+        // (needed for both vanilla and custom anims so bone ordering is correct)
+        // Skip if we already did it above
+        if (is_editing_panim && !bones_fixed) {
             AutoPushCustomBones();
         }
         
@@ -421,7 +447,7 @@ void OpenAnimationsMenu() {
     if (show_window_timeline) {
         ImGui::SameLine();
         ImGui::BeginDisabled(!is_editing_panim && !override_anim);
-        if (ImGui::Checkbox("Sync to Timeline", &anim_sync_to_timeline) && !is_editing_panim && !override_anim)
+        if (ImGui::Checkbox("Sync Timeline", &anim_sync_to_timeline) && !is_editing_panim && !override_anim)
             anim_sync_to_timeline = false;
         ImGui::EndDisabled();
     }

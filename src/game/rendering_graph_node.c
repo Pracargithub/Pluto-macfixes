@@ -1278,7 +1278,7 @@ static void wiggle_update_ex(int bone_idx, f32 smooth, f32 maxDist, f32 snapSmoo
  * but set in global variables. If an animated part is skipped, everything afterwards desyncs.
  */
 static void geo_process_mcomp_extra(struct GraphNodeAnimatedPart *node) {
-    if (override_anim && enable_custom_anim && mcomp_bone_detected && ExtraBoneInBounds(mcomp_bone_index)) {
+    if ((override_anim && enable_custom_anim && mcomp_bone_detected && ExtraBoneInBounds(mcomp_bone_index)) || SaturnIsEditingPAnim()) {
         geo_process_animated_part(node);
     } else {
         Mat4 matrix;
@@ -1305,7 +1305,9 @@ static void geo_process_mcomp_extra(struct GraphNodeAnimatedPart *node) {
             translationPrev[2] += boneOffsetPrev[2];
         }
 
-        mtxf_rotate_xyz_and_translate(matrix, translation, gVec3sZero);
+        Vec3s poseRot, poseRotPrev;
+        SaturnGetCurrentBonePoseRotation(poseRot, poseRotPrev);
+        mtxf_rotate_xyz_and_translate(matrix, translation, poseRot);
         if (gCurGraphNodeObject == &gMarioObject->header.gfx && SaturnShouldApplyBoneScale()) {
             Vec3f boneScale, boneScalePrev;
             ApplyBoneScale(boneScale, boneScalePrev);
@@ -1313,7 +1315,7 @@ static void geo_process_mcomp_extra(struct GraphNodeAnimatedPart *node) {
                               || boneScalePrev[0] != 1.0f || boneScalePrev[1] != 1.0f || boneScalePrev[2] != 1.0f);
             if (non_identity) {
                 Mat4 matrixPrev;
-                mtxf_rotate_xyz_and_translate(matrixPrev, translationPrev, gVec3sZero);
+                mtxf_rotate_xyz_and_translate(matrixPrev, translationPrev, poseRotPrev);
                 mtxf_mul(gMatStack[gMatStackIndex + 1],     matrix,     gMatStack[gMatStackIndex]);
                 mtxf_mul(gMatStackPrev[gMatStackIndex + 1], matrixPrev, gMatStackPrev[gMatStackIndex]);
                 for (int _sc = 0; _sc < 3; _sc++) {
@@ -1326,13 +1328,13 @@ static void geo_process_mcomp_extra(struct GraphNodeAnimatedPart *node) {
                 }
             } else {
                 Mat4 matrixPrev;
-                mtxf_rotate_xyz_and_translate(matrixPrev, translationPrev, gVec3sZero);
+                mtxf_rotate_xyz_and_translate(matrixPrev, translationPrev, poseRotPrev);
                 mtxf_mul(gMatStack[gMatStackIndex + 1],     matrix,     gMatStack[gMatStackIndex]);
                 mtxf_mul(gMatStackPrev[gMatStackIndex + 1], matrixPrev, gMatStackPrev[gMatStackIndex]);
             }
         } else {
             Mat4 matrixPrev;
-            mtxf_rotate_xyz_and_translate(matrixPrev, translationPrev, gVec3sZero);
+            mtxf_rotate_xyz_and_translate(matrixPrev, translationPrev, poseRotPrev);
             mtxf_mul(gMatStack[gMatStackIndex + 1],     matrix,     gMatStack[gMatStackIndex]);
             mtxf_mul(gMatStackPrev[gMatStackIndex + 1], matrixPrev, gMatStackPrev[gMatStackIndex]);
         }
@@ -1383,7 +1385,7 @@ static void geo_process_extra_wiggle(struct GraphNodeExtraWiggle *node) {
         s_wiggle_idx++;
     }
 
-    if (override_anim && enable_custom_anim && mcomp_bone_detected && ExtraBoneInBounds(mcomp_bone_index)) {
+    if ((override_anim && enable_custom_anim && mcomp_bone_detected && ExtraBoneInBounds(mcomp_bone_index)) || SaturnIsEditingPAnim()) {
         geo_process_animated_part((struct GraphNodeAnimatedPart *) node);
     } else {
         Mat4 matrix;
@@ -1409,7 +1411,9 @@ static void geo_process_extra_wiggle(struct GraphNodeExtraWiggle *node) {
             translationPrev[2] += boneOffsetPrev[2];
         }
 
-        mtxf_rotate_xyz_and_translate(matrix, translation, gVec3sZero);
+        Vec3s poseRot, poseRotPrev;
+        SaturnGetCurrentBonePoseRotation(poseRot, poseRotPrev);
+        mtxf_rotate_xyz_and_translate(matrix, translation, poseRot);
         if (use_wiggle) {
             // Spring
             Mat4 wp_cur, wp_prev;
@@ -1428,11 +1432,11 @@ static void geo_process_extra_wiggle(struct GraphNodeExtraWiggle *node) {
             if (prevCamMat != NULL)
                 mtxf_mul(wp_prev, wp_prev, *prevCamMat);
             mtxf_mul(gMatStack[gMatStackIndex + 1], matrix, wp_cur);
-            mtxf_rotate_xyz_and_translate(matrix, translationPrev, gVec3sZero);
+            mtxf_rotate_xyz_and_translate(matrix, translationPrev, poseRotPrev);
             mtxf_mul(gMatStackPrev[gMatStackIndex + 1], matrix, wp_prev);
         } else {
             mtxf_mul(gMatStack[gMatStackIndex + 1], matrix, gMatStack[gMatStackIndex]);
-            mtxf_rotate_xyz_and_translate(matrix, translationPrev, gVec3sZero);
+            mtxf_rotate_xyz_and_translate(matrix, translationPrev, poseRotPrev);
             mtxf_mul(gMatStackPrev[gMatStackIndex + 1], matrix, gMatStackPrev[gMatStackIndex]);
         }
 

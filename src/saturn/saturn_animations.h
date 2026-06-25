@@ -110,6 +110,7 @@ extern "C" {
     extern bool SaturnCurrentBoneIsHidden(void);
     extern bool SaturnCurrentBoneWiggleDisabled(void);
     extern bool SaturnCurrentBoneWindDisabled(void);
+    extern void SaturnGetCurrentBonePoseRotation(Vec3s out, Vec3s out_prev);
 #ifdef __cplusplus
 }
     extern void SetActiveBoneNames(const std::vector<std::string>& names);

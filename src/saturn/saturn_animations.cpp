@@ -881,6 +881,20 @@ bool SaturnCurrentBoneWindDisabled(void) {
     return current_pluto_anim.Bones[idx].WindDisabled;
 }
 
+void SaturnGetCurrentBonePoseRotation(Vec3s out, Vec3s out_prev) {
+    vec3s_set(out,      0, 0, 0);
+    vec3s_set(out_prev, 0, 0, 0);
+    if (!is_editing_panim) return;
+    int idx = s_add_bone_idx - 1;
+    if (idx < 0 || idx >= (int)current_pluto_anim.Bones.size()) return;
+    const float* rot = current_pluto_anim.Bones[idx].Rotation;
+    s16 r0 = (s16)(rot[0] * (65536.f / 360.f));
+    s16 r1 = (s16)(rot[1] * (65536.f / 360.f));
+    s16 r2 = (s16)(rot[2] * (65536.f / 360.f));
+    vec3s_set(out,      r0, r1, r2);
+    vec3s_set(out_prev, r0, r1, r2);
+}
+
 /* Automatically pushes custom bone values down when entering pose editor */
 void AutoPushCustomBones() {
     if (current_pluto_anim.Bones.size() <= 0) return;

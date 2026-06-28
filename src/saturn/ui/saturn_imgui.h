@@ -9,6 +9,17 @@
 #include <string>
 #include <vector>
 
+struct DelayedBool {
+    // bool that can't be set false for a certain number of frames after being set true
+    // used in imgui threading
+    int frames = 0;
+    bool operator()(bool current, int hold = 5) {
+        if (current) frames = hold;
+        else if (frames > 0) frames--;
+        return frames > 0;
+    }
+    explicit operator bool() const { return frames > 0; }
+};
 struct PlayerWindow {
     bool active, hovered;
     int x, y, size;
@@ -40,6 +51,7 @@ extern "C" {
     void imgui_hud();
     extern bool skybox_has_deinit;
     void imgui_capture_screenshot(void*);
+    void saturn_request_preview(struct TexturePath* texture);
 
     void UpdatePaletteFromEditor(int);
 #ifdef __cplusplus

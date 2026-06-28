@@ -31,6 +31,7 @@ bool is_wayland() {
 #include <algorithm>
 
 #include <stb/stb_image_write.h>
+#include <stb/stb_image.h>
 
 #include "saturn/saturn_keyframe.h"
 #include "saturn/ui/saturn_imgui_colors.h"
@@ -108,14 +109,98 @@ struct CameraSaveState {
 };
 std::vector<CameraSaveState> saved_camera_positions;
 
+// ImGui Theading
+#include <pthread.h>
+
+static pthread_t s_build_thread;
+
+static pthread_mutex_t s_kick_mtx  = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t s_kick_cond = PTHREAD_COND_INITIALIZER;
+static bool s_kick_flag = false;
+static bool s_build_quit = false;
+
+static pthread_mutex_t s_stable_mtx = PTHREAD_MUTEX_INITIALIZER;
+static ImVector<ImDrawList*> s_stable_owned;
+static ImDrawData s_stable_data;
+static bool s_stable_valid = false;
+
+static void stable_copy_draw_data() {
+    ImDrawData* src = ImGui::GetDrawData();
+    if (!src || !src->Valid) return;
+
+    while (s_stable_owned.Size > src->CmdListsCount) {
+        IM_DELETE(s_stable_owned.back());
+        s_stable_owned.pop_back();
+    }
+
+    while (s_stable_owned.Size < src->CmdListsCount)
+        s_stable_owned.push_back(IM_NEW(ImDrawList)(src->CmdLists[0]->_Data));
+
+    for (int i = 0; i < src->CmdListsCount; i++) {
+        ImDrawList* s = src->CmdLists[i];
+        ImDrawList* d = s_stable_owned[i];
+        d->_Data = s->_Data;
+        d->Flags = s->Flags;
+        d->CmdBuffer = s->CmdBuffer;
+        d->VtxBuffer = s->VtxBuffer;
+        d->IdxBuffer = s->IdxBuffer;
+    }
+
+    s_stable_data = *src;
+    s_stable_data.CmdLists.resize(src->CmdListsCount);
+    for (int i = 0; i < src->CmdListsCount; i++)
+        s_stable_data.CmdLists[i] = s_stable_owned[i];
+
+    s_stable_valid = true;
+}
+
+// Expression Previews (queue because of threading)
+struct PendingPreview { TexturePath* tex; u8* pixels; int w, h; };
+static std::vector<PendingPreview> s_preview_queue;
+static pthread_mutex_t s_preview_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+void saturn_request_preview(TexturePath* texture) {
+    if (texture->RawData != 0) return;
+
+    FILE* f = fopen(texture->FilePath.c_str(), "rb");
+    if (!f) return;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    std::vector<unsigned char> buf((size_t)sz);
+    fread(buf.data(), 1, (size_t)sz, f);
+    fclose(f);
+
+    int w, h;
+    u8* pixels = stbi_load_from_memory(buf.data(), (int)sz, &w, &h, NULL, 4);
+    if (!pixels) return;
+
+    texture->RawData = pixels;
+    texture->Width   = w;
+    texture->Height  = h;
+
+    pthread_mutex_lock(&s_preview_mtx);
+    s_preview_queue.push_back({texture, pixels, w, h});
+    pthread_mutex_unlock(&s_preview_mtx);
+}
+
+static void* imgui_build_thread_func(void* arg);
+
 void imgui_init() {
     // Create directories for Pluto content
     // These are located at %appdata%/Llennpie/Pluto on Windows, and ~/.local/share/Llennpie/Pluto on Linux
-    std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/colorcodes"));
-    std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/anims"));
-    std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/eyes"));
-    std::filesystem::create_directories(std::string(sys_user_path()).append("/dynos/packs"));
-    pluto_animations_list = GetPAnimList(std::string(sys_user_path()).append("/dynos/anims"));
+    std::string user_path = sys_user_path();
+    std::error_code ec;
+
+    if (std::filesystem::exists("Panimotion.mp3", ec))
+        std::filesystem::copy_file("Panimotion.mp3", user_path + "/Panimotion.mp3",
+            std::filesystem::copy_options::skip_existing, ec);
+
+    std::filesystem::create_directories(user_path + "/dynos/colorcodes", ec);
+    std::filesystem::create_directories(user_path + "/dynos/anims", ec);
+    std::filesystem::create_directories(user_path + "/dynos/eyes", ec);
+    std::filesystem::create_directories(user_path + "/dynos/packs", ec);
+    pluto_animations_list = GetPAnimList(user_path + "/dynos/anims");
 }
 
 void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
@@ -136,6 +221,15 @@ void imgui_init_backend(SDL_Window* window, SDL_GLContext ctx) {
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     RefreshColorCodeList();
+
+    glGenTextures(1, &rot_texture);
+    glBindTexture(GL_TEXTURE_2D, rot_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1280, 720, 0, GL_RGBA, GL_UNSIGNED_BYTE, rule_of_thirds);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    pthread_create(&s_build_thread, NULL, imgui_build_thread_func, NULL);
 }
 
 void imgui_handle_events(SDL_Event* event) {
@@ -203,7 +297,6 @@ void imgui_update() {
     if (timelines.count("Angle") && gMarioStates[0].marioObj)
         gMarioStates[0].faceAngle[1] = (s16)(face_angle * 182.04f);
 
-    // Sync anim frame to timeline cursor
     if (anim_sync_to_timeline && (is_editing_panim || override_anim) && gMarioStates[0].marioObj) {
         struct Animation* curAnim = gMarioStates[0].marioObj->header.gfx.animInfo.curAnim;
         if (curAnim) {
@@ -217,22 +310,72 @@ void imgui_update() {
         }
     }
 
+    pthread_mutex_lock(&s_preview_mtx);
+    for (auto& p : s_preview_queue) {
+        GLuint tex;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, p.w, p.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, p.pixels);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        p.tex->Preview = tex;
+    }
+    s_preview_queue.clear();
+    pthread_mutex_unlock(&s_preview_mtx);
+
+    // Apply screenshot size multiplier
+    if (!screenshot_custom_res) {
+        screenshot_size[0] = gfx_current_dimensions.width  * screenshot_multiplier;
+        screenshot_size[1] = gfx_current_dimensions.height * screenshot_multiplier;
+    }
+
+    pthread_mutex_lock(&s_stable_mtx);
+    if (s_stable_valid) {
+        GLint last_program;
+        glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+        glUseProgram(0);
+        ImGui_ImplOpenGL3_RenderDrawData(&s_stable_data);
+        glUseProgram(last_program);
+    }
+    pthread_mutex_unlock(&s_stable_mtx);
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(current_window);
-    ImGui::NewFrame();
 
-    allow_game_input = !ImGui::GetIO().WantTextInput;
+    pthread_mutex_lock(&s_kick_mtx);
+    s_kick_flag = true;
+    pthread_cond_signal(&s_kick_cond);
+    pthread_mutex_unlock(&s_kick_mtx);
+}
 
+static void imgui_build_widgets();
+
+static void* imgui_build_thread_func(void*) {
+    while (true) {
+        pthread_mutex_lock(&s_kick_mtx);
+        while (!s_kick_flag && !s_build_quit)
+            pthread_cond_wait(&s_kick_cond, &s_kick_mtx);
+        if (s_build_quit) { pthread_mutex_unlock(&s_kick_mtx); break; }
+        s_kick_flag = false;
+        pthread_mutex_unlock(&s_kick_mtx);
+
+        ImGui::NewFrame();
+        allow_game_input = !ImGui::GetIO().WantTextInput;
+        imgui_build_widgets();
+        ImGui::Render();
+
+        pthread_mutex_lock(&s_stable_mtx);
+        stable_copy_draw_data();
+        pthread_mutex_unlock(&s_stable_mtx);
+    }
+    return NULL;
+}
+
+static void imgui_build_widgets() {
     studio_render_notifications();
     
     if (show_rule_of_thirds) {
-        if (rot_texture == 0) {
-            glGenTextures(1, &rot_texture);
-            glBindTexture(GL_TEXTURE_2D, rot_texture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1280, 720, 0, GL_RGBA, GL_UNSIGNED_BYTE, rule_of_thirds);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        }
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
         ImGui::SetNextWindowBgAlpha(0.0f);
@@ -299,8 +442,6 @@ void imgui_update() {
                         ImGui::SetNextItemWidth(100);
                         ImGui::SliderInt("Multiplier", &screenshot_multiplier, 1, 4);
                         ImGui::TextDisabled("%dx%d", screenshot_size[0], screenshot_size[1]);
-                        screenshot_size[0] = gfx_current_dimensions.width * screenshot_multiplier;
-                        screenshot_size[1] = gfx_current_dimensions.height * screenshot_multiplier;
                     }
                     if (ImGui::Button("Save Screenshot")) capture_screenshot = true;
                     ImGui::EndMenu();
@@ -400,6 +541,10 @@ void imgui_update() {
                                 if (gCamera) {
                                     vec3f_copy(gCamera->pos, cam.pos);
                                     vec3f_copy(gCamera->focus, cam.foc);
+                                    vec3f_copy(gLakituState.goalPos, cam.pos);
+                                    vec3f_copy(gLakituState.goalFocus, cam.foc);
+                                    vec3f_copy(gLakituState.pos, cam.pos);
+                                    vec3f_copy(gLakituState.focus, cam.foc);
                                 }
                             }
                             if (ImGui::IsItemHovered()) {
@@ -550,13 +695,6 @@ void imgui_update() {
     }
 
     //ImGui::ShowDemoWindow();
-
-    ImGui::Render();
-    GLint last_program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-    glUseProgram(0);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    glUseProgram(last_program);
 }
 
 #ifdef __MINGW32__

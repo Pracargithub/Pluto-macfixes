@@ -9,6 +9,7 @@
 #include <string_view>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 
 #include "saturn/saturn.h"
 #include "saturn/saturn_colors.h"
@@ -51,7 +52,8 @@ const char* powerup_switches[] = {"Default", "None", "Vanish", "Metal", "Vanish 
 void OpenExpressionPreview(TexturePath* texture) {
     if (ImGui::IsItemHovered() && configExpressionPreviews) {
         if (texture->RawData == 0) {
-            texture->RawData = SetTextureData(*texture, &texture->Width, &texture->Height, &texture->Preview);
+            // Moved to avoid threading issues with ImGui
+            saturn_request_preview(texture);
         } else if (texture->Preview != 0) {
             float maxSize = 128.0f;
             float width = (float)texture->Width;
@@ -74,8 +76,10 @@ void OpenEyeSelector() {
     if (current_expressions.size() <= 0) return;
     if (current_expressions[0].Textures.size() <= 0) return;
     if (current_expressions[0].Name == "eyes") {
+        static DelayedBool s_eyes_visible;
+        bool d_visible = s_eyes_visible(current_expressions[0].Visible);
         // The file browser is always visible, but only interactable when custom eyes are enabled
-        ImGui::BeginDisabled(!custom_eyes || (!current_expressions[0].Visible && !ignore_expression_visibility));
+        ImGui::BeginDisabled(!custom_eyes || (!d_visible && !ignore_expression_visibility));
 
         saturn_file_browser_filter_extension("png");
         saturn_file_browser_scan_directory(current_expressions[0].FolderPath);
@@ -141,9 +145,12 @@ void OpenComboSelector(Expression* expression, int index) {
     if (expression->Textures.size() <= 1) return;
     if (expression->Visible && (expression->Format != G_IM_FMT_RGBA || expression->Size != G_IM_SIZ_32b) && !format_warning_dismissed) return;
 
+    static std::unordered_map<std::string, DelayedBool> s_visible_map;
+    bool d_visible = s_visible_map[expression->Name](expression->Visible);
+
     // Fun table UI
     ImGui::TableNextRow();
-    ImGui::BeginDisabled(!expression->Visible && !ignore_expression_visibility);
+    ImGui::BeginDisabled(!d_visible && !ignore_expression_visibility);
 
     ImGui::TableSetColumnIndex(0);
     std::string label_name = "###menu_exp_label_" + expression->Name;

@@ -1,6 +1,7 @@
 # Pluto
 
 __**Windows:**__
+
 * Download [MSYS2](<https://msys2.org>) from their official website
 * After it's installed, go to the start menu and type in **MINGW64** and run it
   * Confirm that "MINGW64" is displayed in a magenta font

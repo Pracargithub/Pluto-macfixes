@@ -58,10 +58,18 @@ extern "C" {
 #endif
 
 #ifdef GIT_HASH
-#define TITLE ({ char title[96] = ""; snprintf(title, 96, "Pluto [%s]", GIT_HASH); title; })
+static inline const char* get_window_title(void) {
+    static char title[96];
+    snprintf(title, sizeof(title), "Pluto [%s]", GIT_HASH);
+    return title;
+}
 #else
-#define TITLE ({ char title[96] = ""; snprintf(title, 96, "Pluto"); title; })
+static inline const char* get_window_title(void) {
+    return "Pluto";
+}
 #endif
+
+#define TITLE get_window_title()
 
 #define AT_STARTUP __attribute__((constructor))
 

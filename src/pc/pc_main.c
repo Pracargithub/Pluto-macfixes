@@ -367,6 +367,17 @@ void add_to_model_queue(int index, bool enabled, bool first_use) {
     queued_enabled = enabled;
     queued_first_use = first_use;
 }
+struct LoaderArgs {
+    int index;
+    bool enabled;
+    bool first_use;
+};
+
+static void* loader_func(void* v) {
+    struct LoaderArgs* a = (struct LoaderArgs*)v;
+    LoadModelData(a->index, a->enabled, a->first_use, false);
+    return NULL;
+}
 
 void* dynos_thread_func(void* arg) {
     (void)arg;
@@ -374,18 +385,11 @@ void* dynos_thread_func(void* arg) {
         if (queued_index != -1) {
             double start_time = clock_elapsed_f64();
             pthread_t loader_thread;
-            struct {
-                int index;
-                bool enabled;
-                bool first_use;
-            } args = { queued_index, queued_enabled, queued_first_use };
-
-            // Helper function to call LoadModelData
-            void* loader_func(void* v) {
-                typeof(args)* a = v;
-                LoadModelData(a->index, a->enabled, a->first_use, false);
-                return NULL;
-            }
+            struct LoaderArgs args = {
+    queued_index,
+    queued_enabled,
+    queued_first_use
+};
 
             pthread_create(&loader_thread, NULL, loader_func, &args);
 

@@ -680,7 +680,7 @@ ifeq ($(WINDOWS_BUILD),1) # fixes compilation in MXE on Linux and WSL
   OBJCOPY := objcopy
   OBJDUMP := $(CROSS)objdump
 else ifeq ($(OSX_BUILD),1)
-  CPP := cpp-9 -P
+  CPP := cpp -P
   OBJDUMP := i686-w64-mingw32-objdump
   OBJCOPY := i686-w64-mingw32-objcopy
 else ifeq ($(TARGET_N64),0) # Linux & other builds
@@ -1006,7 +1006,7 @@ ifeq ($(DEBUG),1)
 endif
 
 CXXFLAGS := -std=c++17
-LDFLAGS += -lstdc++fs
+# LDFLAGS += -lstdc++fs
 LDFLAGS += -lstdc++
 
 LDFLAGS += -lcjson

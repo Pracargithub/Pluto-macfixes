@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <SDL2/SDL.h>
+#include <sstream>
 
 #include <dirent.h>
 #include <filesystem>
